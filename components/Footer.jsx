@@ -11,8 +11,9 @@ export default function Footer() {
             className="brand-logo-img" 
             style={{ width: '42px', height: '42px' }} 
           />
-          <span className="brand-name" style={{ color: '#ffffff' }}>
-            soft<b style={{ color: 'var(--orange)' }}>Tech</b> Solution
+          <span className="brand-name">
+            <span className="brand-main" style={{ color: '#ffffff' }}>soft<b style={{ color: 'var(--orange)' }}>Tech</b></span>
+            <span className="brand-sub" style={{ color: '#a4b3d1' }}>Solution</span>
           </span>
         </Link>
         <p>

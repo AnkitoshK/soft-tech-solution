@@ -16,7 +16,7 @@ export default function Navbar() {
       <div className="topbar">
         <div className="wrap topbar-inner">
           <span className="topbar-slogan">
-            <code className="code-badge">&lt;/&gt;</code> while (ideas) &#123; innovate(); build(); scale(); &#125; // IDEAS | CODE | SOLUTIONS ⚡
+            ✦ Transforming Theoretical Logic into Scalable Digital Solutions · IDEAS | CODE | SOLUTIONS ⚡
           </span>
           <Link href="/contact" onClick={closeMenu}>
             Book a free strategy call <span>→</span>
@@ -33,7 +33,8 @@ export default function Navbar() {
               className="brand-logo-img"
             />
             <span className="brand-name">
-              soft<b>Tech</b> Solution
+              <span className="brand-main">soft<b>Tech</b></span>
+              <span className="brand-sub">Solution</span>
             </span>
           </Link>
 
