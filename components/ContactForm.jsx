@@ -36,7 +36,7 @@ export default function ContactForm({ isLarge = false }) {
         throw new Error(result.error || 'Unable to submit enquiry.');
       }
 
-      showToast('Thank you! Your enquiry has been received. Founders Aashutosh & Ankitosh will contact you shortly.', 'success');
+      showToast('Thank you for consulting us, our team will contact you within 24 to 48 hours.', 'success');
       setFormData({
         name: '',
         phone: '',
@@ -136,7 +136,7 @@ export default function ContactForm({ isLarge = false }) {
       </button>
 
       <small className="form-note">
-        We respect your privacy. Inquiries are handled directly by founders Aashutosh &amp; Ankitosh.
+        We respect your privacy. Our team will contact you within 24 to 48 hours.
       </small>
     </form>
   );

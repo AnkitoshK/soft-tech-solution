@@ -53,7 +53,7 @@ document.querySelectorAll('.contact-form').forEach(form => form.addEventListener
     const response = await fetch('/api/enquiries', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Unable to submit enquiry');
-    toast.textContent = 'Thanks! Your enquiry has been received.';
+    toast.textContent = 'Thank you for consulting us, our team will contact you within 24 to 48 hours.';
     toast.classList.add('show');
     form.reset();
     setTimeout(() => toast.classList.remove('show'), 4000);
