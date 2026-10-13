@@ -89,7 +89,16 @@ export default function ContactPage() {
                 </span>
                 <div>
                   <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Official Website</small>
-                  <b style={{ fontSize: '14px', color: '#233453' }}>www.softtechsolution.vercel.app</b>
+                  <b style={{ fontSize: '14px', color: '#233453' }}>
+                    <a 
+                      href="https://soft-tech-solution-ebon.vercel.app/" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      soft-tech-solution-ebon.vercel.app
+                    </a>
+                  </b>
                 </div>
               </div>
             </div>

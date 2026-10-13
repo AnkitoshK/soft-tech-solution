@@ -4,16 +4,15 @@ export default function Footer() {
   return (
     <footer>
       <div className="wrap footer-grid">
-        <Link href="/" className="brand" aria-label="Soft Tech Solution">
+        <Link href="/" className="brand" aria-label="softTech Solution">
           <img 
-            src="/soft-tech-solution-logo.jpeg" 
-            alt="Soft Tech Solution" 
+            src="/soft-tech-logo-transparent.png" 
+            alt="softTech Solution" 
             className="brand-logo-img" 
-            style={{ width: '44px', height: '44px' }} 
+            style={{ width: '42px', height: '42px' }} 
           />
-          <span className="brand-name">
-            Soft <b style={{ color: 'var(--orange)' }}>Tech</b>
-            <small style={{ color: '#a4b3d1' }}>Solution</small>
+          <span className="brand-name" style={{ color: '#ffffff' }}>
+            soft<b style={{ color: 'var(--orange)' }}>Tech</b> Solution
           </span>
         </Link>
         <p>
@@ -28,7 +27,17 @@ export default function Footer() {
           <Link href="/contact">Contact</Link>
           <Link href="/admin/login" style={{ opacity: 0.75 }}>Admin Login</Link>
         </div>
-        <small>© 2026 Soft Tech Solution. All rights reserved.<br />www.softtechsolution.vercel.app</small>
+        <small>
+          © 2026 softTech Solution. All rights reserved.<br />
+          <a 
+            href="https://soft-tech-solution-ebon.vercel.app/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={{ color: '#a4b3d1', textDecoration: 'underline' }}
+          >
+            soft-tech-solution-ebon.vercel.app
+          </a>
+        </small>
       </div>
     </footer>
   );

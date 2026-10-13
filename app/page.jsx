@@ -416,7 +416,16 @@ export default function HomePage() {
               <span>🌐</span>
               <div>
                 <small>Visit our live site</small>
-                <strong>www.softtechsolution.vercel.app</strong>
+                <strong>
+                  <a 
+                    href="https://soft-tech-solution-ebon.vercel.app/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ color: '#ffffff', textDecoration: 'none' }}
+                  >
+                    soft-tech-solution-ebon.vercel.app
+                  </a>
+                </strong>
               </div>
             </div>
           </div>

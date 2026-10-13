@@ -15,8 +15,8 @@ export default function Navbar() {
     <>
       <div className="topbar">
         <div className="wrap topbar-inner">
-          <span>
-            ✦ IDEAS | CODE | SOLUTIONS · Founder: Aashutosh (+91 9876543753) · Co-Founder: Ankitosh (+91 6205570278)
+          <span className="topbar-slogan">
+            <code className="code-badge">&lt;/&gt;</code> while (ideas) &#123; innovate(); build(); scale(); &#125; // IDEAS | CODE | SOLUTIONS ⚡
           </span>
           <Link href="/contact" onClick={closeMenu}>
             Book a free strategy call <span>→</span>
@@ -26,15 +26,14 @@ export default function Navbar() {
 
       <header className="site-header">
         <div className="wrap nav">
-          <Link href="/" className="brand" onClick={closeMenu} aria-label="Soft Tech Solution Home">
+          <Link href="/" className="brand" onClick={closeMenu} aria-label="softTech Solution Home">
             <img 
-              src="/soft-tech-solution-logo.jpeg" 
-              alt="Soft Tech Solution" 
+              src="/soft-tech-logo-transparent.png" 
+              alt="softTech Solution" 
               className="brand-logo-img"
             />
             <span className="brand-name">
-              Soft <b>Tech</b>
-              <small>Solution</small>
+              soft<b>Tech</b> Solution
             </span>
           </Link>
 

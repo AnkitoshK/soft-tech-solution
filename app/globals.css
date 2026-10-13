@@ -84,6 +84,27 @@ a {
   color: var(--gold);
 }
 
+.topbar-slogan {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.02em;
+  font-size: 12px;
+}
+
+.code-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--gold);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  letter-spacing: 0.05em;
+}
+
 /* HEADER & NAVIGATION */
 .site-header {
   position: sticky;
@@ -104,40 +125,40 @@ a {
 }
 
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .brand-logo-img {
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
-  border-radius: 8px;
+  transition: transform 0.25s ease;
+}
+
+.brand:hover .brand-logo-img {
+  transform: rotate(-6deg) scale(1.06);
 }
 
 .brand-name {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  white-space: nowrap;
   font-family: 'Poppins', sans-serif;
   font-weight: 800;
-  font-size: 19px;
+  font-size: 21px;
   letter-spacing: -0.6px;
   color: var(--navy);
+  line-height: 1;
 }
 
 .brand-name b {
   color: var(--orange);
-}
-
-.brand-name small {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  font-weight: 800;
 }
 
 .nav-links {
@@ -1311,10 +1332,6 @@ footer {
   color: #ffffff;
 }
 
-.footer-grid .brand-name small {
-  color: #a4b3d1;
-}
-
 .footer-grid p {
   font-size: 12px;
   color: #9baac8;
@@ -1539,6 +1556,19 @@ footer {
     padding: 8px 0;
     flex-direction: column;
     text-align: center;
+    gap: 6px;
+  }
+
+  .topbar-slogan {
+    font-size: 11px;
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .brand-name {
+    font-size: 19px;
   }
 
   .menu-toggle {
