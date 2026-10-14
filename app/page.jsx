@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import ContactForm from '@/components/ContactForm';
+import Testimonials from '@/components/Testimonials';
 
 export default function HomePage() {
   const officialServices = [
@@ -359,19 +360,19 @@ export default function HomePage() {
           <div className="case-grid">
             <article className="case-case blue-case">
               <div className="case-circle"></div>
-              <p className="case-tag">Branding · Social Media</p>
-              <h3>Making every morning<br />a little more memorable.</h3>
+              <p className="case-tag">Next.js Web App · Fleet Dispatch · Online Booking</p>
+              <h3>SoftRide Mobility: Scaling online vehicle bookings by +240%.</h3>
               <p style={{ color: '#eef5fa', fontSize: '13px', marginBottom: '20px' }}>
-                Scaled Morning Roast from 0 to 45k loyal community followers and doubled weekly orders.
+                Engineered an enterprise vehicle booking and fleet reservation website with real-time route estimates, Razorpay checkout, and automated driver dispatch.
               </p>
               <Link href="/portfolio">View case study <span>↗</span></Link>
             </article>
 
             <article className="case-case orange-case">
-              <p className="case-tag">Web Design · Next.js · Paid Media</p>
-              <h3>A digital storefront<br />built to convert.</h3>
+              <p className="case-tag">AI Automation · NLP · Support Ticketing Tool</p>
+              <h3>Workmate AI: Smart ticketing tool cutting turnaround by 72%.</h3>
               <p style={{ color: '#fff', fontSize: '13px', marginBottom: '20px' }}>
-                Redesigned e-commerce experience achieving a 3.4x jump in mobile conversion rates.
+                Architected an intelligent ticketing and customer support desk featuring NLP auto-categorization, priority technician routing, and live SLA analytics.
               </p>
               <Link href="/portfolio">View case study <span>↗</span></Link>
             </article>
@@ -379,22 +380,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* TESTIMONIAL */}
-      <section className="testimonial">
-        <div className="wrap quote-wrap">
-          <div className="quote-mark">“</div>
-          <blockquote>
-            Soft Tech Solution didn't just help us look better online—they helped us think bigger about what our business could become. Their founders are genuinely invested in our success.
-          </blockquote>
-          <div className="quote-person">
-            <span>RS</span>
-            <p>
-              <b>Rohan Sharma</b><br />
-              Founder, Morning Roast
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* DELIVERED CLIENT SOLUTIONS & TESTIMONIALS */}
+      <Testimonials />
+
 
       {/* CONTACT SECTION */}
       <section id="contact" className="contact section">

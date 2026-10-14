@@ -8,6 +8,50 @@ export default function PortfolioPage() {
 
   const projects = [
     {
+      id: 'softride',
+      title: 'Real-time online vehicle booking & fleet dispatch.',
+      client: 'SoftRide Mobility',
+      types: ['web'],
+      typeLabel: 'Next.js Web App · Fleet Dispatch · Online Booking',
+      desc: 'Engineered a high-performance vehicle booking website with live Google Maps route calculations, instant fare estimates, driver assignment, and automated Razorpay checkout.',
+      metric: '+240% Daily Bookings',
+      bgGradient: 'linear-gradient(135deg, #065f46, #059669)',
+      tagColor: '#ffffff',
+    },
+    {
+      id: 'workmate',
+      title: 'AI-powered ticketing automation & smart support desk.',
+      client: 'Workmate AI',
+      types: ['web', 'ai'],
+      typeLabel: 'AI Automation · NLP · Support Ticketing Tool',
+      desc: 'Custom-built intelligent support desk platform with NLP ticket classification, automatic technician routing, real-time SLA metrics, and instant AI draft responses.',
+      metric: '72% Faster Resolution',
+      bgGradient: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+      tagColor: '#ffffff',
+    },
+    {
+      id: 'talenthire',
+      title: 'Enterprise job recruitment & applicant tracking portal.',
+      client: 'TalentHire (Apex Global)',
+      types: ['web'],
+      typeLabel: 'Fullstack Web Portal · Recruitment & HR Tech',
+      desc: 'End-to-end recruitment platform handling company job postings, automated resume parsing, candidate pipeline tracking, interview scheduling, and employee onboarding.',
+      metric: '150+ Hires Streamlined',
+      bgGradient: 'linear-gradient(135deg, #9a3412, #ea580c)',
+      tagColor: '#ffffff',
+    },
+    {
+      id: 'nexus-banners',
+      title: 'High-converting UI/UX design & marketing ad banners.',
+      client: 'Nexus Retail Brands',
+      types: ['branding', 'marketing'],
+      typeLabel: 'UI/UX Design · Google & Meta Ad Banners · CRO',
+      desc: 'Designed complete seasonal marketing banner suites, homepage hero visuals, and high-CTR social media ad creatives that doubled online store ROAS.',
+      metric: '3.8x Click-Through Rate',
+      bgGradient: 'linear-gradient(135deg, #6b21a8, #9333ea)',
+      tagColor: '#ffffff',
+    },
+    {
       id: 'roast',
       title: 'A brand made for bright starts.',
       client: 'Morning Roast',
@@ -29,34 +73,20 @@ export default function PortfolioPage() {
       bgGradient: '#df7040',
       tagColor: '#fff',
     },
-    {
-      id: 'arch',
-      title: 'Giving a growing architecture studio a distinctive home.',
-      client: 'Arch Studio',
-      types: ['branding', 'web'],
-      typeLabel: 'Branding · Portfolio Web Design',
-      desc: 'Minimalist editorial website design and high-end typography showcasing architectural masterworks with interactive project galleries.',
-      metric: '+92% Lead Inquiries',
-      bgGradient: '#ded6cf',
-      tagColor: '#2d333a',
-    },
-    {
-      id: 'sprout',
-      title: 'Growing a health & wellness community from the ground up.',
-      client: 'Sprout Organic',
-      types: ['marketing'],
-      typeLabel: 'Social Media · Content Strategy',
-      desc: 'End-to-end content creation, influencer partnerships, and educational email marketing campaigns establishing market authority.',
-      metric: '120k+ Video Views',
-      bgGradient: '#e4edcf',
-      tagColor: '#31563f',
-    },
   ];
 
   const filteredProjects = projects.filter(p => {
     if (filter === 'all') return true;
     return p.types.includes(filter);
   });
+
+  const filterLabels = {
+    all: 'All Work (6)',
+    web: 'Web Apps & Portals',
+    ai: 'AI Tools',
+    branding: 'UI/UX & Branding',
+    marketing: 'Banners & Marketing',
+  };
 
   return (
     <>
@@ -70,7 +100,7 @@ export default function PortfolioPage() {
             <em>move the needle.</em>
           </h1>
           <p style={{ maxWidth: '540px', color: '#6d7788', fontSize: '16px', lineHeight: '1.75' }}>
-            A curated selection of digital experiences, branding campaigns, and custom applications engineered for commercial impact.
+            A curated selection of digital experiences, booking engines, AI automation tools, and custom applications engineered for commercial impact.
           </p>
         </div>
       </section>
@@ -78,7 +108,7 @@ export default function PortfolioPage() {
       <section className="section" style={{ background: '#f8fafc' }}>
         <div className="wrap">
           <div style={{ display: 'flex', gap: '10px', marginBottom: '36px', flexWrap: 'wrap' }}>
-            {['all', 'branding', 'web', 'marketing'].map((category) => (
+            {['all', 'web', 'ai', 'branding', 'marketing'].map((category) => (
               <button
                 key={category}
                 onClick={() => setFilter(category)}
@@ -96,7 +126,7 @@ export default function PortfolioPage() {
                   textTransform: 'capitalize',
                 }}
               >
-                {category === 'all' ? 'All Work' : category === 'web' ? 'Web Design & Next.js' : category}
+                {filterLabels[category] || category}
               </button>
             ))}
           </div>
