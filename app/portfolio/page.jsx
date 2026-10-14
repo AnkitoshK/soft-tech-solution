@@ -10,7 +10,7 @@ export default function PortfolioPage() {
     {
       id: 'softride',
       title: 'Real-time online vehicle booking & fleet dispatch.',
-      client: 'SoftRide Mobility',
+      client: 'SoftRide Solutions',
       types: ['web'],
       typeLabel: 'Next.js Web App · Fleet Dispatch · Online Booking',
       desc: 'Engineered a high-performance vehicle booking website with live Google Maps route calculations, instant fare estimates, driver assignment, and automated Razorpay checkout.',

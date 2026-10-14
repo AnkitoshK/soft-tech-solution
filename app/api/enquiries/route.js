@@ -13,19 +13,46 @@ export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
     const name = safe(body.name, 120);
-    const email = safe(body.email, 180);
-    const phone = safe(body.phone, 40);
+    const email = safe(body.email, 180).toLowerCase();
+    const rawPhone = safe(body.phone, 40);
     const service = safe(body.service, 120);
     const message = safe(body.message, 5000);
 
-    if (!name || !email) {
-      return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 });
-    }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      return NextResponse.json({ error: 'Please enter a valid email.' }, { status: 400 });
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json({ error: 'Please enter your full name (minimum 2 characters).' }, { status: 400 });
     }
 
-    const saved = await createEnquiry({ name, email, phone, service, message });
+    // Strict 10-digit phone validation
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      return NextResponse.json({ 
+        error: 'Contact number must be exactly 10 digits.' 
+      }, { status: 400 });
+    }
+
+    // Strict email validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
+      return NextResponse.json({ 
+        error: 'Please enter a valid email address (e.g. name@gmail.com or company email).' 
+      }, { status: 400 });
+    }
+
+    // Gmail typo prevention
+    const domainPart = email.split('@')[1] || '';
+    if (domainPart.includes('gmail') && domainPart !== 'gmail.com') {
+      return NextResponse.json({ 
+        error: 'Did you mean @gmail.com? Please verify your Gmail address.' 
+      }, { status: 400 });
+    }
+
+    const saved = await createEnquiry({ 
+      name, 
+      email, 
+      phone: cleanPhone, 
+      service, 
+      message 
+    });
     return NextResponse.json({ ok: true, id: saved?.id }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || 'Could not save enquiry.' }, { status: 500 });

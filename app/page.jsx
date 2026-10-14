@@ -361,7 +361,7 @@ export default function HomePage() {
             <article className="case-case blue-case">
               <div className="case-circle"></div>
               <p className="case-tag">Next.js Web App · Fleet Dispatch · Online Booking</p>
-              <h3>SoftRide Mobility: Scaling online vehicle bookings by +240%.</h3>
+              <h3>SoftRide Solutions: Scaling online vehicle bookings by +240%.</h3>
               <p style={{ color: '#eef5fa', fontSize: '13px', marginBottom: '20px' }}>
                 Engineered an enterprise vehicle booking and fleet reservation website with real-time route estimates, Razorpay checkout, and automated driver dispatch.
               </p>

@@ -14,20 +14,87 @@ export default function ContactForm({ isLarge = false }) {
     message: '',
   });
 
+  const [errors, setErrors] = useState({
+    phone: '',
+    email: '',
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Strict 10-digit contact number handling
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, phone: digitsOnly }));
+
+      if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+        setErrors(prev => ({ ...prev, phone: `${digitsOnly.length}/10 digits entered (10 digits required)` }));
+      } else {
+        setErrors(prev => ({ ...prev, phone: '' }));
+      }
+      return;
+    }
+
+    // Email validation
+    if (name === 'email') {
+      setFormData(prev => ({ ...prev, email: value }));
+      const cleanEmail = value.trim();
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      
+      if (cleanEmail && !emailRegex.test(cleanEmail)) {
+        setErrors(prev => ({ ...prev, email: 'Please enter a valid email address (e.g. name@gmail.com)' }));
+      } else {
+        const domain = cleanEmail.split('@')[1] || '';
+        if (domain.toLowerCase().includes('gmail') && domain.toLowerCase() !== 'gmail.com') {
+          setErrors(prev => ({ ...prev, email: 'Did you mean @gmail.com? Please verify.' }));
+        } else {
+          setErrors(prev => ({ ...prev, email: '' }));
+        }
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Validate Phone Number (must be exactly 10 digits)
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      setErrors(prev => ({ ...prev, phone: 'Contact number must be exactly 10 digits.' }));
+      showToast('Contact number must be exactly 10 digits.', 'error');
+      return;
+    }
+
+    // 2. Validate Email Address
+    const cleanEmail = formData.email.trim();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrors(prev => ({ ...prev, email: 'Please enter a valid email (e.g. yourname@gmail.com).' }));
+      showToast('Please enter a valid email address.', 'error');
+      return;
+    }
+
+    const domain = cleanEmail.split('@')[1] || '';
+    if (domain.toLowerCase().includes('gmail') && domain.toLowerCase() !== 'gmail.com') {
+      setErrors(prev => ({ ...prev, email: 'Did you mean @gmail.com? Please verify your Gmail.' }));
+      showToast('Please check your Gmail address format (@gmail.com).', 'error');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const response = await fetch('/api/enquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phone: cleanPhone,
+          email: cleanEmail,
+        }),
       });
 
       const result = await response.json();
@@ -44,6 +111,7 @@ export default function ContactForm({ isLarge = false }) {
         service: 'Web Development',
         message: '',
       });
+      setErrors({ phone: '', email: '' });
     } catch (err) {
       showToast(err.message || 'Something went wrong. Please call +91 9117696512 or +91 6205570278.', 'error');
     } finally {
@@ -76,28 +144,57 @@ export default function ContactForm({ isLarge = false }) {
           />
         </label>
         <label>
-          Phone Number *
+          Phone Number (10 digits) *
           <input 
             type="tel" 
             name="phone" 
             required 
-            placeholder="e.g. +91 98765 43210" 
+            maxLength={10}
+            inputMode="numeric"
+            pattern="[0-9]{10}"
+            placeholder="e.g. 9876543210 (10 digits)" 
             value={formData.phone}
             onChange={handleChange}
+            style={{
+              borderColor: errors.phone ? '#dc2626' : undefined,
+              outlineColor: errors.phone ? '#dc2626' : undefined,
+            }}
           />
+          {errors.phone ? (
+            <span style={{ display: 'block', color: '#dc2626', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
+              ⚠️ {errors.phone}
+            </span>
+          ) : formData.phone.length === 10 ? (
+            <span style={{ display: 'block', color: '#16a34a', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
+              ✓ 10-digit number entered
+            </span>
+          ) : null}
         </label>
       </div>
 
       <label>
-        Work Email *
+        Valid Email Address *
         <input 
           type="email" 
           name="email" 
           required 
-          placeholder="you@company.com" 
+          placeholder="e.g. you@gmail.com or company email" 
           value={formData.email}
           onChange={handleChange}
+          style={{
+            borderColor: errors.email ? '#dc2626' : undefined,
+            outlineColor: errors.email ? '#dc2626' : undefined,
+          }}
         />
+        {errors.email ? (
+          <span style={{ display: 'block', color: '#dc2626', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
+            ⚠️ {errors.email}
+          </span>
+        ) : formData.email.includes('@') && !errors.email ? (
+          <span style={{ display: 'block', color: '#16a34a', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
+            ✓ Valid email format
+          </span>
+        ) : null}
       </label>
 
       <label>
