@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminRequest, hashPassword } from '@/lib/auth';
-import { getAdminUsers, createAdminUser, updateAdminPassword, deleteAdminUser } from '@/lib/db';
+import { getAdminUsers, createAdminUser, updateAdminPassword, deleteAdminUser, deleteMultipleAdminUsers } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -99,7 +99,7 @@ export async function PATCH(request) {
   }
 }
 
-// DELETE: Remove an admin user
+// DELETE: Remove one or multiple admin accounts
 export async function DELETE(request) {
   const currentAdmin = verifyAdminRequest(request);
   if (!currentAdmin) {
@@ -108,8 +108,29 @@ export async function DELETE(request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    let id = searchParams.get('id');
+    let ids = null;
 
+    // Also check body if JSON was sent
+    try {
+      const body = await request.json();
+      if (body) {
+        if (Array.isArray(body.ids)) ids = body.ids;
+        if (body.id) id = body.id;
+      }
+    } catch {}
+
+    // Batch deletion case
+    if (Array.isArray(ids) && ids.length > 0) {
+      const result = await deleteMultipleAdminUsers(ids);
+      return NextResponse.json({
+        ok: true,
+        message: `${result.deletedCount} admin ID(s) deleted successfully.`,
+        deletedCount: result.deletedCount,
+      }, { status: 200 });
+    }
+
+    // Single deletion case
     if (!id) {
       return NextResponse.json({ error: 'Admin ID is required.' }, { status: 400 });
     }
@@ -120,7 +141,7 @@ export async function DELETE(request) {
 
     const success = await deleteAdminUser(id);
     if (!success) {
-      return NextResponse.json({ error: 'Could not delete admin user.' }, { status: 404 });
+      return NextResponse.json({ error: 'Could not delete admin user. Account not found or protected.' }, { status: 404 });
     }
 
     return NextResponse.json({ ok: true, message: 'Admin account removed successfully.' }, { status: 200 });

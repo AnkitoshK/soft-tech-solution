@@ -41,6 +41,22 @@ export default function AdminDashboardPage() {
   const [newPasswordValue, setNewPasswordValue] = useState('');
   const [updatingPassword, setUpdatingPassword] = useState(false);
 
+  // Admin IDs Search, View & Batch Deletion State
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [adminViewMode, setAdminViewMode] = useState('table'); // 'table' | 'grid'
+  const [selectedAdminIds, setSelectedAdminIds] = useState([]);
+  const [isDeletingBatch, setIsDeletingBatch] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const copyToClipboard = (text, id) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      showToast(`Copied Admin ID: ${text}`, 'info');
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
   const getAuthHeaders = () => {
     if (typeof window === 'undefined') return {};
     const token = localStorage.getItem('sts_admin_token');
@@ -256,13 +272,13 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Delete admin user
+  // Delete single admin ID
   const handleDeleteAdmin = async (adminUser) => {
     if (adminUser.isMaster || adminUser.id === 'master_admin') {
       showToast('The Master Administrator account cannot be removed.', 'error');
       return;
     }
-    if (!window.confirm(`Are you sure you want to remove administrator "${adminUser.name}" (${adminUser.email})?`)) {
+    if (!window.confirm(`Are you sure you want to permanently delete Admin ID "${adminUser.id}" for "${adminUser.name}" (${adminUser.email})? This action cannot be undone.`)) {
       return;
     }
 
@@ -273,13 +289,48 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('Administrator removed successfully.', 'info');
+        showToast(`Admin ID "${adminUser.id}" deleted successfully.`, 'info');
+        setSelectedAdminIds(prev => prev.filter(id => id !== adminUser.id));
         loadAdmins();
       } else {
-        showToast(data.error || 'Could not delete admin user.', 'error');
+        showToast(data.error || 'Could not delete admin ID.', 'error');
       }
     } catch {
-      showToast('Server error removing admin user.', 'error');
+      showToast('Server error removing admin ID.', 'error');
+    }
+  };
+
+  // Batch delete multiple selected admin IDs
+  const handleBatchDeleteAdmins = async () => {
+    const deletableIds = selectedAdminIds.filter(id => id !== 'master_admin');
+    if (!deletableIds.length) {
+      showToast('Please select at least one created Admin ID to delete.', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to permanently delete all ${deletableIds.length} selected Admin ID(s)? This will remove their administrative access immediately.`)) {
+      return;
+    }
+
+    setIsDeletingBatch(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ ids: deletableIds }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || `${deletableIds.length} Admin ID(s) deleted successfully.`, 'info');
+        setSelectedAdminIds([]);
+        loadAdmins();
+      } else {
+        showToast(data.error || 'Failed to delete selected Admin IDs.', 'error');
+      }
+    } catch {
+      showToast('Server error deleting Admin IDs.', 'error');
+    } finally {
+      setIsDeletingBatch(false);
     }
   };
 
@@ -312,6 +363,12 @@ export default function AdminDashboardPage() {
   const filteredLeads = leads.filter(l => {
     const q = searchQuery.toLowerCase();
     const str = `${l.name} ${l.email} ${l.phone} ${l.service} ${l.message}`.toLowerCase();
+    return str.includes(q);
+  });
+
+  const filteredAdmins = admins.filter(adm => {
+    const q = adminSearchQuery.toLowerCase();
+    const str = `${adm.id || ''} ${adm.name || ''} ${adm.email || ''} ${adm.role || ''}`.toLowerCase();
     return str.includes(q);
   });
 
@@ -542,7 +599,7 @@ export default function AdminDashboardPage() {
               transition: 'all 0.2s ease',
             }}
           >
-            <span>👥</span> Admin Team &amp; Access Control
+            <span>👥</span> Admin IDs &amp; Access Control
             <span style={{
               background: activeTab === 'admins' ? '#fff7ed' : '#f1f5f9',
               color: activeTab === 'admins' ? 'var(--orange)' : '#64748b',
@@ -552,7 +609,7 @@ export default function AdminDashboardPage() {
               borderRadius: '12px',
               border: `1px solid ${activeTab === 'admins' ? '#fed7aa' : '#e2e8f0'}`,
             }}>
-              {admins.length || 1}
+              {admins.length || 1} IDs
             </span>
           </button>
         </div>
@@ -758,25 +815,63 @@ export default function AdminDashboardPage() {
         )}
 
         {/* ==============================================================
-            TAB 2: ADMIN TEAM & ACCESS CONTROL VIEW
+            TAB 2: ADMIN IDS & ACCESS CONTROL VIEW
             ============================================================== */}
         {activeTab === 'admins' && (
           <div>
+            {/* HEADER & QUICK STATS */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               flexWrap: 'wrap',
               gap: '16px',
-              marginBottom: '24px',
+              marginBottom: '20px',
             }}>
               <div>
                 <h2 style={{ fontSize: '22px', color: 'var(--navy)', margin: 0 }}>
-                  Administrator Team &amp; Credentials
+                  Administrator Accounts &amp; IDs
                 </h2>
                 <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
-                  Manage authorized administrators, create new administrative logins, and reset access passwords.
+                  Manage registered admin IDs, copy unique ID tokens, or permanently delete unnecessary and test IDs.
                 </p>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #e2e8f0',
+                  }}>
+                    Total IDs: <b>{admins.length}</b>
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    background: '#ecfdf5',
+                    color: '#065f46',
+                    border: '1px solid #a7f3d0',
+                  }}>
+                    Created IDs: <b>{admins.filter(a => !a.isMaster && a.id !== 'master_admin').length}</b>
+                  </span>
+                  {selectedAdminIds.length > 0 && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      background: '#fee2e2',
+                      color: '#991b1b',
+                      border: '1px solid #fecaca',
+                    }}>
+                      Selected to Delete: <b>{selectedAdminIds.length}</b>
+                    </span>
+                  )}
+                </div>
               </div>
 
               <button
@@ -785,18 +880,394 @@ export default function AdminDashboardPage() {
                 className="button primary"
                 style={{ padding: '10px 18px', fontSize: '13px' }}
               >
-                + Add New Administrator
+                + Add New Admin ID
               </button>
             </div>
 
-            {/* ADMINS GRID */}
+            {/* ACTION TOOLBAR: SEARCH, BATCH DELETE, AND VIEW TOGGLE */}
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '260px' }}>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+                  <input
+                    type="text"
+                    value={adminSearchQuery}
+                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                    placeholder="🔍 Search Admin ID, name, or email…"
+                    style={{
+                      width: '100%',
+                      padding: '8px 32px 8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13px',
+                      outline: 'none',
+                    }}
+                  />
+                  {adminSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setAdminSearchQuery('')}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#94a3b8',
+                        fontSize: '14px',
+                      }}
+                      title="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {selectedAdminIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBatchDeleteAdmins}
+                    disabled={isDeletingBatch}
+                    style={{
+                      background: '#ef4444',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 14px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 6px rgba(239, 68, 68, 0.3)',
+                    }}
+                    title="Permanently delete all selected admin IDs"
+                  >
+                    🗑 Delete Selected IDs ({selectedAdminIds.length})
+                  </button>
+                )}
+              </div>
+
+              {/* VIEW SWITCHER */}
+              <div style={{
+                display: 'inline-flex',
+                background: '#f1f5f9',
+                borderRadius: '8px',
+                padding: '3px',
+                gap: '2px',
+                border: '1px solid #e2e8f0',
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setAdminViewMode('table')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: adminViewMode === 'table' ? '#ffffff' : 'transparent',
+                    color: adminViewMode === 'table' ? 'var(--navy)' : '#64748b',
+                    fontWeight: adminViewMode === 'table' ? 700 : 500,
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    boxShadow: adminViewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  ☷ Table View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminViewMode('grid')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: adminViewMode === 'grid' ? '#ffffff' : 'transparent',
+                    color: adminViewMode === 'grid' ? 'var(--navy)' : '#64748b',
+                    fontWeight: adminViewMode === 'grid' ? 700 : 500,
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    boxShadow: adminViewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  ▦ Cards View
+                </button>
+              </div>
+            </div>
+
+            {/* ADMIN USERS LIST */}
             {adminLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                Loading admin users…
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', background: '#ffffff', borderRadius: '16px' }}>
+                Loading admin IDs…
+              </div>
+            ) : filteredAdmins.length === 0 ? (
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '50px 20px',
+                textAlign: 'center',
+              }}>
+                <p style={{ fontSize: '15px', color: '#64748b', margin: 0 }}>
+                  No administrator IDs match "<b>{adminSearchQuery}</b>"
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setAdminSearchQuery('')}
+                  className="button outline"
+                  style={{ marginTop: '14px', padding: '6px 14px', fontSize: '12px' }}
+                >
+                  Clear Search Filter
+                </button>
+              </div>
+            ) : adminViewMode === 'table' ? (
+              /* TABLE VIEW: IDEAL FOR MANAGING MULTIPLE IDS */
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 18px rgba(15, 23, 42, 0.04)',
+              }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '12px', fontWeight: 700 }}>
+                        <th style={{ padding: '14px 16px', width: '40px', textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={
+                              filteredAdmins.filter(a => !a.isMaster && a.id !== 'master_admin').length > 0 &&
+                              filteredAdmins.filter(a => !a.isMaster && a.id !== 'master_admin').every(a => selectedAdminIds.includes(a.id))
+                            }
+                            onChange={(e) => {
+                              const deletables = filteredAdmins.filter(a => !a.isMaster && a.id !== 'master_admin').map(a => a.id);
+                              if (e.target.checked) {
+                                setSelectedAdminIds(prev => Array.from(new Set([...prev, ...deletables])));
+                              } else {
+                                setSelectedAdminIds(prev => prev.filter(id => !deletables.includes(id)));
+                              }
+                            }}
+                            title="Select all created IDs for batch deletion"
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </th>
+                        <th style={{ padding: '14px 16px' }}>Unique Admin ID</th>
+                        <th style={{ padding: '14px 16px' }}>Administrator</th>
+                        <th style={{ padding: '14px 16px' }}>Assigned Role</th>
+                        <th style={{ padding: '14px 16px' }}>Created Date</th>
+                        <th style={{ padding: '14px 16px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAdmins.map((adm) => {
+                        const isMaster = adm.isMaster || adm.id === 'master_admin';
+                        const isSelected = selectedAdminIds.includes(adm.id);
+                        const initials = (adm.name || 'Admin')
+                          .split(' ')
+                          .map(n => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2);
+
+                        return (
+                          <tr
+                            key={adm.id}
+                            style={{
+                              borderBottom: '1px solid #f1f5f9',
+                              background: isSelected ? '#fef2f2' : 'transparent',
+                              transition: 'background 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) e.currentTarget.style.background = '#fbfcfe';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                              {!isMaster ? (
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedAdminIds(prev => [...prev, adm.id]);
+                                    } else {
+                                      setSelectedAdminIds(prev => prev.filter(id => id !== adm.id));
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                />
+                              ) : (
+                                <span title="Master ID cannot be deleted" style={{ color: '#cbd5e1', fontSize: '11px' }}>🔒</span>
+                              )}
+                            </td>
+
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <code style={{
+                                  background: isMaster ? '#fef3c7' : '#f1f5f9',
+                                  color: isMaster ? '#92400e' : '#0f172a',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  fontFamily: 'monospace',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  border: `1px solid ${isMaster ? '#fde68a' : '#e2e8f0'}`,
+                                }}>
+                                  {adm.id}
+                                </code>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(adm.id, adm.id)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: copiedId === adm.id ? '#16a34a' : '#64748b',
+                                    padding: '2px',
+                                  }}
+                                  title="Copy Admin ID to clipboard"
+                                >
+                                  {copiedId === adm.id ? '✓' : '📋'}
+                                </button>
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '8px',
+                                  background: isMaster ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+                                  color: '#ffffff',
+                                  display: 'grid',
+                                  placeItems: 'center',
+                                  fontWeight: 700,
+                                  fontSize: '12px',
+                                  flexShrink: 0,
+                                }}>
+                                  {initials}
+                                </div>
+                                <div>
+                                  <b style={{ color: '#1e293b', display: 'block', fontSize: '13px' }}>
+                                    {adm.name}
+                                  </b>
+                                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                                    {adm.email}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '14px 16px' }}>
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                padding: '3px 9px',
+                                borderRadius: '12px',
+                                background: isMaster ? '#fef3c7' : '#e0f2fe',
+                                color: isMaster ? '#b45309' : '#0369a1',
+                                border: `1px solid ${isMaster ? '#fde68a' : '#bae6fd'}`,
+                              }}>
+                                {adm.role || (isMaster ? 'Super Admin' : 'Admin')}
+                              </span>
+                            </td>
+
+                            <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '12px' }}>
+                              {new Date(adm.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </td>
+
+                            <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setResetTargetUser(adm);
+                                    setNewPasswordValue('');
+                                    setShowResetPassModal(true);
+                                  }}
+                                  className="button outline"
+                                  style={{ padding: '5px 10px', fontSize: '11px' }}
+                                  title="Reset password for this admin"
+                                >
+                                  🔑 Password
+                                </button>
+
+                                {!isMaster ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteAdmin(adm)}
+                                    style={{
+                                      background: '#fee2e2',
+                                      border: '1px solid #fca5a5',
+                                      color: '#dc2626',
+                                      padding: '5px 12px',
+                                      borderRadius: '6px',
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = '#dc2626';
+                                      e.currentTarget.style.color = '#ffffff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = '#fee2e2';
+                                      e.currentTarget.style.color = '#dc2626';
+                                    }}
+                                    title={`Delete Admin ID: ${adm.id}`}
+                                  >
+                                    🗑 Delete ID
+                                  </button>
+                                ) : (
+                                  <span style={{
+                                    fontSize: '11px',
+                                    color: '#94a3b8',
+                                    fontWeight: 600,
+                                    padding: '5px 10px',
+                                  }} title="Master ID cannot be deleted">
+                                    🔒 Master ID
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
+              /* GRID VIEW: CARDS WITH DETAILED ID CONTROLS */
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '20px' }}>
-                {admins.map((adm) => {
+                {filteredAdmins.map((adm) => {
+                  const isMaster = adm.isMaster || adm.id === 'master_admin';
+                  const isSelected = selectedAdminIds.includes(adm.id);
                   const initials = (adm.name || 'Admin')
                     .split(' ')
                     .map(n => n[0])
@@ -809,28 +1280,45 @@ export default function AdminDashboardPage() {
                       key={adm.id}
                       style={{
                         background: '#ffffff',
-                        border: '1px solid #e2e8f0',
+                        border: isSelected ? '2px solid #ef4444' : '1px solid #e2e8f0',
                         borderRadius: '16px',
-                        padding: '24px',
+                        padding: '22px',
                         boxShadow: '0 4px 18px rgba(15, 23, 42, 0.04)',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
+                        position: 'relative',
                       }}
                     >
                       <div>
+                        {/* CARD TOPBAR */}
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {!isMaster && (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedAdminIds(prev => [...prev, adm.id]);
+                                  } else {
+                                    setSelectedAdminIds(prev => prev.filter(id => id !== adm.id));
+                                  }
+                                }}
+                                style={{ cursor: 'pointer', marginRight: '2px' }}
+                                title="Select ID to delete"
+                              />
+                            )}
                             <div style={{
-                              width: '46px',
-                              height: '46px',
+                              width: '44px',
+                              height: '44px',
                               borderRadius: '12px',
-                              background: adm.isMaster ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+                              background: isMaster ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'linear-gradient(135deg, #1e3a8a, #2563eb)',
                               color: '#ffffff',
                               display: 'grid',
                               placeItems: 'center',
                               fontWeight: 800,
-                              fontSize: '16px',
+                              fontSize: '15px',
                             }}>
                               {initials}
                             </div>
@@ -838,7 +1326,7 @@ export default function AdminDashboardPage() {
                               <b style={{ fontSize: '15px', color: '#1e293b', display: 'block' }}>
                                 {adm.name}
                               </b>
-                              <span style={{ fontSize: '13px', color: '#64748b' }}>
+                              <span style={{ fontSize: '12px', color: '#64748b' }}>
                                 {adm.email}
                               </span>
                             </div>
@@ -849,15 +1337,52 @@ export default function AdminDashboardPage() {
                             fontWeight: 700,
                             padding: '3px 9px',
                             borderRadius: '12px',
-                            background: adm.isMaster ? '#fef3c7' : '#e0f2fe',
-                            color: adm.isMaster ? '#b45309' : '#0369a1',
-                            border: `1px solid ${adm.isMaster ? '#fde68a' : '#bae6fd'}`,
+                            background: isMaster ? '#fef3c7' : '#e0f2fe',
+                            color: isMaster ? '#b45309' : '#0369a1',
+                            border: `1px solid ${isMaster ? '#fde68a' : '#bae6fd'}`,
                           }}>
-                            {adm.role || (adm.isMaster ? 'Super Admin' : 'Admin')}
+                            {adm.role || (isMaster ? 'Super Admin' : 'Admin')}
                           </span>
                         </div>
 
-                        <div style={{ marginTop: '16px', fontSize: '12px', color: '#94a3b8' }}>
+                        {/* ADMIN ID BADGE */}
+                        <div style={{
+                          margin: '16px 0 10px',
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.04em' }}>
+                              Admin ID
+                            </span>
+                            <code style={{ fontSize: '12px', color: '#0f172a', fontWeight: 700, fontFamily: 'monospace' }}>
+                              {adm.id}
+                            </code>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(adm.id, adm.id)}
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              color: copiedId === adm.id ? '#16a34a' : '#475569',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {copiedId === adm.id ? '✓ Copied' : '📋 Copy'}
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>
                           📅 Registered: {new Date(adm.created_at).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -866,13 +1391,15 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
+                      {/* CARD ACTIONS */}
                       <div style={{
-                        marginTop: '20px',
-                        paddingTop: '16px',
+                        marginTop: '18px',
+                        paddingTop: '14px',
                         borderTop: '1px solid #f1f5f9',
                         display: 'flex',
-                        gap: '10px',
+                        gap: '8px',
                         justifyContent: 'flex-end',
+                        alignItems: 'center',
                       }}>
                         <button
                           type="button"
@@ -885,27 +1412,43 @@ export default function AdminDashboardPage() {
                           style={{ padding: '6px 12px', fontSize: '12px' }}
                           title="Set new password for this admin"
                         >
-                          🔑 Change Password
+                          🔑 Password
                         </button>
 
-                        {!adm.isMaster && adm.id !== 'master_admin' && (
+                        {!isMaster ? (
                           <button
                             type="button"
                             onClick={() => handleDeleteAdmin(adm)}
                             style={{
-                              background: '#fff1f2',
-                              border: '1px solid #fecdd3',
-                              color: '#e11d48',
+                              background: '#fee2e2',
+                              border: '1px solid #fca5a5',
+                              color: '#dc2626',
                               padding: '6px 12px',
                               borderRadius: '8px',
                               fontSize: '12px',
-                              fontWeight: 600,
+                              fontWeight: 700,
                               cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease',
                             }}
-                            title="Remove administrator access"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#dc2626';
+                              e.currentTarget.style.color = '#ffffff';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#fee2e2';
+                              e.currentTarget.style.color = '#dc2626';
+                            }}
+                            title={`Delete Admin ID: ${adm.id}`}
                           >
-                            🗑 Remove
+                            🗑 Delete ID
                           </button>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                            🔒 Master ID
+                          </span>
                         )}
                       </div>
                     </div>

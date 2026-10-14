@@ -8,6 +8,11 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
+  // Hide Navbar only from admin section (/admin, /admin/login, etc.)
+  if (pathname && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
+    return null;
+  }
+
   const toggleMenu = () => setIsOpen(prev => !prev);
   const closeMenu = () => setIsOpen(false);
 
