@@ -10,47 +10,36 @@ export default function ContactForm({ isLarge = false }) {
     name: '',
     phone: '',
     email: '',
-    service: 'Web Development',
+    service: '',
     message: '',
   });
 
   const [errors, setErrors] = useState({
     phone: '',
     email: '',
+    service: '',
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Strict 10-digit contact number handling
+    // Strict numeric restriction, max 10 digits
     if (name === 'phone') {
       const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
       setFormData(prev => ({ ...prev, phone: digitsOnly }));
-
-      if (digitsOnly.length > 0 && digitsOnly.length < 10) {
-        setErrors(prev => ({ ...prev, phone: `${digitsOnly.length}/10 digits entered (10 digits required)` }));
-      } else {
-        setErrors(prev => ({ ...prev, phone: '' }));
-      }
+      setErrors(prev => ({ ...prev, phone: '' }));
       return;
     }
 
-    // Email validation
     if (name === 'email') {
       setFormData(prev => ({ ...prev, email: value }));
-      const cleanEmail = value.trim();
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      
-      if (cleanEmail && !emailRegex.test(cleanEmail)) {
-        setErrors(prev => ({ ...prev, email: 'Please enter a valid email address (e.g. name@gmail.com)' }));
-      } else {
-        const domain = cleanEmail.split('@')[1] || '';
-        if (domain.toLowerCase().includes('gmail') && domain.toLowerCase() !== 'gmail.com') {
-          setErrors(prev => ({ ...prev, email: 'Did you mean @gmail.com? Please verify.' }));
-        } else {
-          setErrors(prev => ({ ...prev, email: '' }));
-        }
-      }
+      setErrors(prev => ({ ...prev, email: '' }));
+      return;
+    }
+
+    if (name === 'service') {
+      setFormData(prev => ({ ...prev, service: value }));
+      setErrors(prev => ({ ...prev, service: '' }));
       return;
     }
 
@@ -63,8 +52,8 @@ export default function ContactForm({ isLarge = false }) {
     // 1. Validate Phone Number (must be exactly 10 digits)
     const cleanPhone = formData.phone.replace(/\D/g, '');
     if (cleanPhone.length !== 10) {
-      setErrors(prev => ({ ...prev, phone: 'Contact number must be exactly 10 digits.' }));
-      showToast('Contact number must be exactly 10 digits.', 'error');
+      setErrors(prev => ({ ...prev, phone: 'Please enter a valid 10-digit mobile number.' }));
+      showToast('Please enter a valid 10-digit mobile number.', 'error');
       return;
     }
 
@@ -72,15 +61,22 @@ export default function ContactForm({ isLarge = false }) {
     const cleanEmail = formData.email.trim();
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(cleanEmail)) {
-      setErrors(prev => ({ ...prev, email: 'Please enter a valid email (e.g. yourname@gmail.com).' }));
+      setErrors(prev => ({ ...prev, email: 'Please enter a valid email address.' }));
       showToast('Please enter a valid email address.', 'error');
       return;
     }
 
     const domain = cleanEmail.split('@')[1] || '';
     if (domain.toLowerCase().includes('gmail') && domain.toLowerCase() !== 'gmail.com') {
-      setErrors(prev => ({ ...prev, email: 'Did you mean @gmail.com? Please verify your Gmail.' }));
-      showToast('Please check your Gmail address format (@gmail.com).', 'error');
+      setErrors(prev => ({ ...prev, email: 'Please check your email address.' }));
+      showToast('Please enter a valid email address.', 'error');
+      return;
+    }
+
+    // 3. Validate Service selection
+    if (!formData.service) {
+      setErrors(prev => ({ ...prev, service: 'Please select a service.' }));
+      showToast('Please choose a service you need.', 'error');
       return;
     }
 
@@ -108,10 +104,10 @@ export default function ContactForm({ isLarge = false }) {
         name: '',
         phone: '',
         email: '',
-        service: 'Web Development',
+        service: '',
         message: '',
       });
-      setErrors({ phone: '', email: '' });
+      setErrors({ phone: '', email: '', service: '' });
     } catch (err) {
       showToast(err.message || 'Something went wrong. Please call +91 9117696512 or +91 6205570278.', 'error');
     } finally {
@@ -138,13 +134,13 @@ export default function ContactForm({ isLarge = false }) {
             type="text" 
             name="name" 
             required 
-            placeholder="e.g. Rahul Sharma" 
+            placeholder="Full Name" 
             value={formData.name}
             onChange={handleChange}
           />
         </label>
         <label>
-          Phone Number (10 digits) *
+          Phone Number *
           <input 
             type="tel" 
             name="phone" 
@@ -152,7 +148,7 @@ export default function ContactForm({ isLarge = false }) {
             maxLength={10}
             inputMode="numeric"
             pattern="[0-9]{10}"
-            placeholder="e.g. 9876543210 (10 digits)" 
+            placeholder="Mobile Number" 
             value={formData.phone}
             onChange={handleChange}
             style={{
@@ -160,25 +156,21 @@ export default function ContactForm({ isLarge = false }) {
               outlineColor: errors.phone ? '#dc2626' : undefined,
             }}
           />
-          {errors.phone ? (
+          {errors.phone && (
             <span style={{ display: 'block', color: '#dc2626', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
-              ⚠️ {errors.phone}
+              {errors.phone}
             </span>
-          ) : formData.phone.length === 10 ? (
-            <span style={{ display: 'block', color: '#16a34a', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
-              ✓ 10-digit number entered
-            </span>
-          ) : null}
+          )}
         </label>
       </div>
 
       <label>
-        Valid Email Address *
+        Email Address *
         <input 
           type="email" 
           name="email" 
           required 
-          placeholder="e.g. you@gmail.com or company email" 
+          placeholder="Email Address" 
           value={formData.email}
           onChange={handleChange}
           style={{
@@ -186,24 +178,26 @@ export default function ContactForm({ isLarge = false }) {
             outlineColor: errors.email ? '#dc2626' : undefined,
           }}
         />
-        {errors.email ? (
+        {errors.email && (
           <span style={{ display: 'block', color: '#dc2626', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
-            ⚠️ {errors.email}
+            {errors.email}
           </span>
-        ) : formData.email.includes('@') && !errors.email ? (
-          <span style={{ display: 'block', color: '#16a34a', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
-            ✓ Valid email format
-          </span>
-        ) : null}
+        )}
       </label>
 
       <label>
-        What can we help with?
+        What can we help with? *
         <select 
           name="service" 
+          required
           value={formData.service}
           onChange={handleChange}
+          style={{
+            borderColor: errors.service ? '#dc2626' : undefined,
+            color: formData.service ? '#1f2937' : '#9ca3af',
+          }}
         >
+          <option value="" disabled>-- Select a Service --</option>
           <option value="Web Development">Web Development (&lt;/&gt;)</option>
           <option value="Mobile App Development">Mobile App Development</option>
           <option value="UI/UX Design">UI/UX Design</option>
@@ -215,6 +209,11 @@ export default function ContactForm({ isLarge = false }) {
           <option value="Google / Meta Ads">Google / Meta Ads</option>
           <option value="Graphics / Social Media Design">Graphics / Social Media Design</option>
         </select>
+        {errors.service && (
+          <span style={{ display: 'block', color: '#dc2626', fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>
+            {errors.service}
+          </span>
+        )}
       </label>
 
       <label>
@@ -222,7 +221,7 @@ export default function ContactForm({ isLarge = false }) {
         <textarea 
           name="message" 
           rows={3} 
-          placeholder="Describe your project, timeline, budget, or ideas..."
+          placeholder="Message or project requirements..."
           value={formData.message}
           onChange={handleChange}
         />

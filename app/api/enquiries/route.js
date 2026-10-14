@@ -46,6 +46,10 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    if (!service || service.trim() === '') {
+      return NextResponse.json({ error: 'Please select a service.' }, { status: 400 });
+    }
+
     const saved = await createEnquiry({ 
       name, 
       email, 
