@@ -26,7 +26,7 @@ A production fullstack **Next.js (App Router)** website and client lead manageme
 - **Ankitosh Kumar** — *Co-Founder*, Soft Tech Solution
   - 📞 **Mobile / WhatsApp:** `+91 6205570278`
   - ✉️ **Email:** `softtechsolution@gmail.com`
-  - 🖼️ **Portrait:** [`public/ankitosh-kumar-cofounder.jpeg`](public/ankitosh-kumar-cofounder.jpeg) *(in white shirt)*
+  - 🖼️ **Portrait:** [`public/ankitosh-kumar-cofounder.jpeg`](public/ankitosh-kumar-cofounder.jpeg) *(in blue blazer)*
 
 ---
 
@@ -168,7 +168,7 @@ soft-tech/
 │   ├── auth.js                # JWT & session verification
 │   └── db.js                  # Database client with local persistence & Supabase
 ├── public/                    # Logos, founder portraits, assets
-│   ├── ankitosh-kumar-cofounder.jpeg  # Ankitosh Kumar (white shirt)
+│   ├── ankitosh-kumar-cofounder.jpeg  # Ankitosh Kumar (blue blazer)
 │   ├── ashutosh-kumar-founder.jpeg    # Aashutosh Kumar (blue coat)
 │   └── soft-tech-solution-logo.jpeg   # Company Logo
 ├── legacy-static/             # Safely archived previous static HTML files
