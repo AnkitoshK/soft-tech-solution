@@ -9,6 +9,12 @@ export default function AdminDashboardPage() {
   const { showToast } = useToast();
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState({ email: '', name: '', role: '' });
+
+  // Tab: 'leads' | 'admins'
+  const [activeTab, setActiveTab] = useState('leads');
+
+  // Leads State
   const [leads, setLeads] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +22,24 @@ export default function AdminDashboardPage() {
   const [dbInfo, setDbInfo] = useState(null);
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+
+  // Admin Users State
+  const [admins, setAdmins] = useState([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [showNewAdminModal, setShowNewAdminModal] = useState(false);
+  const [newAdminForm, setNewAdminForm] = useState({
+    name: '',
+    email: '',
+    role: 'Admin',
+    password: '',
+  });
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+
+  // Password Reset Modal State
+  const [showResetPassModal, setShowResetPassModal] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState(null);
+  const [newPasswordValue, setNewPasswordValue] = useState('');
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   const getAuthHeaders = () => {
     if (typeof window === 'undefined') return {};
@@ -61,6 +85,24 @@ export default function AdminDashboardPage() {
     }
   }, [router, showToast, fetchDbStatus]);
 
+  const loadAdmins = useCallback(async () => {
+    setAdminLoading(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        headers: getAuthHeaders(),
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAdmins(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.warn('Could not load admins:', err);
+    } finally {
+      setAdminLoading(false);
+    }
+  }, []);
+
   // Check session on mount
   useEffect(() => {
     async function checkAuth() {
@@ -71,8 +113,14 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         if (data.authenticated) {
           setAuthenticated(true);
+          setCurrentUser({
+            email: data.email || '',
+            name: data.name || 'Admin',
+            role: data.role || 'Admin',
+          });
           loadLeads(statusFilter);
           fetchDbStatus();
+          loadAdmins();
         } else {
           setAuthenticated(false);
           router.replace('/admin/login');
@@ -85,7 +133,7 @@ export default function AdminDashboardPage() {
       }
     }
     checkAuth();
-  }, [router, statusFilter, loadLeads, fetchDbStatus]);
+  }, [router, statusFilter, loadLeads, fetchDbStatus, loadAdmins]);
 
   const handleLogout = async () => {
     try {
@@ -131,6 +179,107 @@ export default function AdminDashboardPage() {
       }
     } catch {
       showToast('Could not delete enquiry.', 'error');
+    }
+  };
+
+  // Create new admin
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    if (!newAdminForm.name || newAdminForm.name.trim().length < 2) {
+      showToast('Name must be at least 2 characters.', 'error');
+      return;
+    }
+    if (!newAdminForm.email || !newAdminForm.email.includes('@')) {
+      showToast('Valid admin email is required.', 'error');
+      return;
+    }
+    if (!newAdminForm.password || newAdminForm.password.length < 6) {
+      showToast('Password must be at least 6 characters long.', 'error');
+      return;
+    }
+
+    setCreatingAdmin(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(newAdminForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'New admin account created!', 'success');
+        setShowNewAdminModal(false);
+        setNewAdminForm({ name: '', email: '', role: 'Admin', password: '' });
+        loadAdmins();
+      } else {
+        showToast(data.error || 'Failed to create admin.', 'error');
+      }
+    } catch {
+      showToast('Could not connect to server.', 'error');
+    } finally {
+      setCreatingAdmin(false);
+    }
+  };
+
+  // Reset admin password
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetTargetUser || !resetTargetUser.email) return;
+    if (!newPasswordValue || newPasswordValue.length < 6) {
+      showToast('Password must be at least 6 characters long.', 'error');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          email: resetTargetUser.email,
+          newPassword: newPasswordValue,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'Password updated successfully!', 'success');
+        setShowResetPassModal(false);
+        setResetTargetUser(null);
+        setNewPasswordValue('');
+      } else {
+        showToast(data.error || 'Failed to update password.', 'error');
+      }
+    } catch {
+      showToast('Server error resetting password.', 'error');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  // Delete admin user
+  const handleDeleteAdmin = async (adminUser) => {
+    if (adminUser.isMaster || adminUser.id === 'master_admin') {
+      showToast('The Master Administrator account cannot be removed.', 'error');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to remove administrator "${adminUser.name}" (${adminUser.email})?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users?id=${encodeURIComponent(adminUser.id)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Administrator removed successfully.', 'info');
+        loadAdmins();
+      } else {
+        showToast(data.error || 'Could not delete admin user.', 'error');
+      }
+    } catch {
+      showToast('Server error removing admin user.', 'error');
     }
   };
 
@@ -228,6 +377,24 @@ export default function AdminDashboardPage() {
                   {dbInfo.badge}
                 </span>
               )}
+
+              {/* CURRENT LOGGED IN USER BADGE */}
+              {currentUser.email && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  marginLeft: '4px',
+                }}>
+                  👤 {currentUser.name || currentUser.email} ({currentUser.role})
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0' }}>
               Leadership: Founder Aashutosh Kumar (+91 9117696512) · Co-Founder Ankitosh Kumar (+91 6205570278)
@@ -235,21 +402,36 @@ export default function AdminDashboardPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              onClick={() => loadLeads(statusFilter)} 
-              className="button outline"
-              style={{ padding: '8px 16px', fontSize: '13px' }}
-              disabled={refreshing}
-            >
-              {refreshing ? 'Refreshing…' : '🔄 Refresh'}
-            </button>
-            <button 
-              onClick={exportCSV} 
-              className="button outline"
-              style={{ padding: '8px 16px', fontSize: '13px' }}
-            >
-              📥 Export CSV
-            </button>
+            {activeTab === 'leads' && (
+              <>
+                <button 
+                  onClick={() => loadLeads(statusFilter)} 
+                  className="button outline"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                  disabled={refreshing}
+                >
+                  {refreshing ? 'Refreshing…' : '🔄 Refresh'}
+                </button>
+                <button 
+                  onClick={exportCSV} 
+                  className="button outline"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                >
+                  📥 Export CSV
+                </button>
+              </>
+            )}
+
+            {activeTab === 'admins' && (
+              <button 
+                onClick={() => setShowNewAdminModal(true)} 
+                className="button primary"
+                style={{ padding: '8px 16px', fontSize: '13px' }}
+              >
+                + Add New Admin
+              </button>
+            )}
+
             <button 
               onClick={handleLogout} 
               className="button outline"
@@ -262,16 +444,16 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* DASHBOARD CONTENT */}
-      <div className="wrap" style={{ marginTop: '28px' }}>
+      <div className="wrap" style={{ marginTop: '24px' }}>
 
-        {/* CLOUD DATABASE NOTICE BANNER (WHEN NOT YET LINKED IN VERCEL) */}
+        {/* CLOUD DATABASE NOTICE BANNER */}
         {dbInfo && !dbInfo.connected && (
           <div style={{
             background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
             border: '1px solid #fcd34d',
             borderRadius: '16px',
             padding: '18px 24px',
-            marginBottom: '28px',
+            marginBottom: '24px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -300,221 +482,440 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* STATS CARDS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px', marginBottom: '28px' }}>
-          <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Total Inquiries</span>
-            <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: 'var(--navy)', marginTop: '4px' }}>{totalCount}</b>
-          </div>
-
-          <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
-            <span style={{ fontSize: '13px', color: '#e67831', fontWeight: 600 }}>New Requests</span>
-            <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: 'var(--orange)', marginTop: '4px' }}>{newCount}</b>
-          </div>
-
-          <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
-            <span style={{ fontSize: '13px', color: '#1f7db9', fontWeight: 600 }}>In Contact</span>
-            <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: 'var(--blue)', marginTop: '4px' }}>{contactedCount}</b>
-          </div>
-
-          <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
-            <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 600 }}>Converted Clients</span>
-            <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: '#16a34a', marginTop: '4px' }}>{convertedCount}</b>
-          </div>
-        </div>
-
-        {/* SEARCH & FILTERS TOOLBAR */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
-          <input 
-            type="text" 
-            placeholder="Search by name, email, phone, or service..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+        {/* SEGMENTED TAB SWITCHER */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          borderBottom: '1px solid #e2e8f0',
+          marginBottom: '24px',
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('leads')}
             style={{
-              padding: '12px 16px',
-              borderRadius: '10px',
-              border: '1px solid #d9dfeb',
-              background: '#ffffff',
-              minWidth: '280px',
-              flex: 1,
-              maxWidth: '450px',
-              fontSize: '14px',
-              outline: 'none',
+              padding: '12px 20px',
+              border: 'none',
+              background: 'none',
+              borderBottom: activeTab === 'leads' ? '3px solid var(--orange)' : '3px solid transparent',
+              color: activeTab === 'leads' ? 'var(--navy)' : '#64748b',
+              fontWeight: 700,
+              fontSize: '15px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
             }}
-          />
+          >
+            <span>📋</span> Client Proposals &amp; Enquiries
+            <span style={{
+              background: activeTab === 'leads' ? '#fff7ed' : '#f1f5f9',
+              color: activeTab === 'leads' ? 'var(--orange)' : '#64748b',
+              fontSize: '11px',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              border: `1px solid ${activeTab === 'leads' ? '#fed7aa' : '#e2e8f0'}`,
+            }}>
+              {totalCount}
+            </span>
+          </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Status:</span>
-            <select 
-              value={statusFilter}
-              onChange={e => {
-                setStatusFilter(e.target.value);
-                loadLeads(e.target.value);
-              }}
-              style={{
-                padding: '11px 16px',
-                borderRadius: '10px',
-                border: '1px solid #d9dfeb',
-                background: '#ffffff',
-                fontSize: '13px',
-                fontWeight: 600,
-                color: '#334155',
-                outline: 'none',
-              }}
-            >
-              <option value="All">All Statuses</option>
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Qualified">Qualified</option>
-              <option value="Converted">Converted</option>
-              <option value="Closed">Closed</option>
-            </select>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('admins');
+              loadAdmins();
+            }}
+            style={{
+              padding: '12px 20px',
+              border: 'none',
+              background: 'none',
+              borderBottom: activeTab === 'admins' ? '3px solid var(--orange)' : '3px solid transparent',
+              color: activeTab === 'admins' ? 'var(--navy)' : '#64748b',
+              fontWeight: 700,
+              fontSize: '15px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>👥</span> Admin Team &amp; Access Control
+            <span style={{
+              background: activeTab === 'admins' ? '#fff7ed' : '#f1f5f9',
+              color: activeTab === 'admins' ? 'var(--orange)' : '#64748b',
+              fontSize: '11px',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              border: `1px solid ${activeTab === 'admins' ? '#fed7aa' : '#e2e8f0'}`,
+            }}>
+              {admins.length || 1}
+            </span>
+          </button>
         </div>
 
-        {/* LEADS TABLE */}
-        <div style={{ background: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 25px rgba(24, 34, 56, 0.06)', border: '1px solid #edf2f7' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '850px' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #edf0f5' }}>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Client / Lead</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Service</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Proposal Request</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Pipeline Status</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Received Date</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeads.map(lead => (
-                  <tr key={lead.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
-                      <b style={{ color: '#1e293b', fontSize: '14px', display: 'block' }}>{lead.name}</b>
-                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                        <a href={`mailto:${lead.email}`} style={{ color: 'var(--blue)', textDecoration: 'none' }}>{lead.email}</a>
-                      </div>
-                      {lead.phone && (
-                        <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
-                          <a href={`tel:${lead.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>📞 {lead.phone}</a>
-                        </div>
-                      )}
-                    </td>
+        {/* ==============================================================
+            TAB 1: CLIENT LEADS & ENQUIRIES VIEW
+            ============================================================== */}
+        {activeTab === 'leads' && (
+          <>
+            {/* STATS CARDS */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px', marginBottom: '28px' }}>
+              <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
+                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Total Inquiries</span>
+                <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: 'var(--navy)', marginTop: '4px' }}>{totalCount}</b>
+              </div>
 
-                    <td style={{ padding: '16px 20px', verticalAlign: 'top', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                      <span style={{ background: '#f1f5f9', padding: '4px 10px', borderRadius: '6px', display: 'inline-block' }}>
-                        {lead.service || 'General Inquiry'}
-                      </span>
-                    </td>
+              <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
+                <span style={{ fontSize: '13px', color: '#e67831', fontWeight: 600 }}>New Requests</span>
+                <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: 'var(--orange)', marginTop: '4px' }}>{newCount}</b>
+              </div>
 
-                    <td style={{ padding: '16px 20px', verticalAlign: 'top', fontSize: '13px', color: '#475569', maxWidth: '300px' }}>
-                      <div 
-                        onClick={() => setSelectedLead(lead)} 
-                        style={{ cursor: 'pointer', lineClamp: 3, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                        title="Click to view full message"
-                      >
-                        {lead.message || '—'}
-                      </div>
-                    </td>
+              <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
+                <span style={{ fontSize: '13px', color: '#1f7db9', fontWeight: 600 }}>In Contact</span>
+                <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: 'var(--blue)', marginTop: '4px' }}>{contactedCount}</b>
+              </div>
 
-                    <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
-                      <select 
-                        value={lead.status || 'New'}
-                        onChange={e => handleStatusChange(lead.id, e.target.value)}
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          border: '1px solid #d9dfeb',
-                          background: 
-                            lead.status === 'Converted' ? '#dcfce7' :
-                            lead.status === 'Contacted' ? '#e0f2fe' :
-                            lead.status === 'Qualified' ? '#fef3c7' : '#fff7ed',
-                          color:
-                            lead.status === 'Converted' ? '#166534' :
-                            lead.status === 'Contacted' ? '#075985' :
-                            lead.status === 'Qualified' ? '#92400e' : '#9a3412',
-                          cursor: 'pointer',
-                          outline: 'none',
-                        }}
-                      >
-                        <option value="New">New</option>
-                        <option value="Contacted">Contacted</option>
-                        <option value="Qualified">Qualified</option>
-                        <option value="Converted">Converted</option>
-                        <option value="Closed">Closed</option>
-                      </select>
-                    </td>
+              <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
+                <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 600 }}>Converted Clients</span>
+                <b style={{ display: 'block', fontSize: '32px', fontFamily: 'Poppins, sans-serif', color: '#16a34a', marginTop: '4px' }}>{convertedCount}</b>
+              </div>
+            </div>
 
-                    <td style={{ padding: '16px 20px', verticalAlign: 'top', fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
-                      {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'Recent'}
-                    </td>
+            {/* SEARCH & FILTERS TOOLBAR */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+              <input 
+                type="text" 
+                placeholder="Search by name, email, phone, or service..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  flex: '1 1 300px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #d9dfeb',
+                  background: '#ffffff',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
 
-                    <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          onClick={() => setSelectedLead(lead)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #dbeafe',
-                            background: '#eff6ff',
-                            color: '#1d4ed8',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          View
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteLead(lead.id)}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #fecaca',
-                            background: '#fff1f2',
-                            color: '#e11d48',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {['All', 'New', 'Contacted', 'Proposal Sent', 'Converted', 'Archived'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => {
+                      setStatusFilter(status);
+                      loadLeads(status);
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '10px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      border: '1px solid',
+                      cursor: 'pointer',
+                      background: statusFilter === status ? 'var(--navy)' : '#ffffff',
+                      color: statusFilter === status ? '#ffffff' : '#4b5563',
+                      borderColor: statusFilter === status ? 'var(--navy)' : '#d9dfeb',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {status}
+                  </button>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
 
-          {leads.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '70px 20px', color: '#64748b' }}>
-              <div style={{ fontSize: '42px', marginBottom: '12px' }}>📬</div>
-              <p style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>No enquiries submitted yet</p>
-              <p style={{ fontSize: '14px', maxWidth: '460px', margin: '8px auto 20px', lineHeight: 1.6, color: '#64748b' }}>
-                Your Neon Postgres cloud database is connected and ready. Test it right now by submitting a proposal on the website:
-              </p>
-              <a 
-                href="/contact" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="button primary" 
-                style={{ padding: '10px 24px', fontSize: '13px', display: 'inline-block' }}
+            {/* LEADS LIST / TABLE */}
+            <div style={{ background: '#ffffff', borderRadius: '18px', border: '1px solid #edf2f7', overflow: 'hidden', boxShadow: '0 4px 25px rgba(24, 34, 56, 0.04)' }}>
+              {filteredLeads.length === 0 ? (
+                <div style={{ padding: '60px 20px', textAlign: 'center', color: '#6b7280' }}>
+                  <span style={{ fontSize: '40px', display: 'block', marginBottom: '10px' }}>📭</span>
+                  <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--navy)' }}>No inquiries found</p>
+                  <p style={{ fontSize: '13px', maxWidth: '400px', margin: '4px auto 0' }}>
+                    {searchQuery ? 'Try adjusting your search criteria.' : 'When clients request a proposal, their details appear here in real time.'}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #edf2f7', color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <th style={{ padding: '16px 20px' }}>Client</th>
+                        <th style={{ padding: '16px 20px' }}>Service</th>
+                        <th style={{ padding: '16px 20px' }}>Status</th>
+                        <th style={{ padding: '16px 20px' }}>Date</th>
+                        <th style={{ padding: '16px 20px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredLeads.map(lead => (
+                        <tr 
+                          key={lead.id} 
+                          style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#fbfcfe'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ fontWeight: 700, color: '#182238' }}>{lead.name}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '8px', marginTop: '2px' }}>
+                              <span>{lead.email}</span>
+                              {lead.phone && <span>• {lead.phone}</span>}
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <span style={{
+                              background: '#f0fdf4',
+                              color: '#15803d',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              border: '1px solid #bbf7d0',
+                            }}>
+                              {lead.service || 'General Inquiry'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <select
+                              value={lead.status || 'New'}
+                              onChange={e => handleStatusChange(lead.id, e.target.value)}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                border: '1px solid #d9dfeb',
+                                background: lead.status === 'New' ? '#fff7ed' :
+                                            lead.status === 'Contacted' ? '#eff6ff' :
+                                            lead.status === 'Converted' ? '#dcfce7' : '#ffffff',
+                                color: lead.status === 'New' ? '#c2410c' :
+                                       lead.status === 'Contacted' ? '#1d4ed8' :
+                                       lead.status === 'Converted' ? '#15803d' : '#374151',
+                                cursor: 'pointer',
+                                outline: 'none',
+                              }}
+                            >
+                              <option value="New">New</option>
+                              <option value="Contacted">Contacted</option>
+                              <option value="Proposal Sent">Proposal Sent</option>
+                              <option value="Converted">Converted</option>
+                              <option value="Archived">Archived</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '13px' }}>
+                            {new Date(lead.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </td>
+                          <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => setSelectedLead(lead)}
+                              style={{
+                                background: 'none',
+                                border: '1px solid #e2e8f0',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                color: 'var(--blue)',
+                                cursor: 'pointer',
+                                marginRight: '8px',
+                              }}
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLead(lead.id)}
+                              style={{
+                                background: 'none',
+                                border: '1px solid #fee2e2',
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                              }}
+                              title="Delete enquiry"
+                            >
+                              🗑
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ==============================================================
+            TAB 2: ADMIN TEAM & ACCESS CONTROL VIEW
+            ============================================================== */}
+        {activeTab === 'admins' && (
+          <div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '16px',
+              marginBottom: '24px',
+            }}>
+              <div>
+                <h2 style={{ fontSize: '22px', color: 'var(--navy)', margin: 0 }}>
+                  Administrator Team &amp; Credentials
+                </h2>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
+                  Manage authorized administrators, create new administrative logins, and reset access passwords.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowNewAdminModal(true)}
+                className="button primary"
+                style={{ padding: '10px 18px', fontSize: '13px' }}
               >
-                Open &quot;Get a Proposal&quot; Form ↗
-              </a>
+                + Add New Administrator
+              </button>
             </div>
-          ) : filteredLeads.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-              <p style={{ fontSize: '16px', fontWeight: 600 }}>No enquiries matching your search.</p>
-              <p style={{ fontSize: '13px', marginTop: '4px' }}>Try switching the status filter or clearing your search term.</p>
-            </div>
-          ) : null}
-        </div>
+
+            {/* ADMINS GRID */}
+            {adminLoading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                Loading admin users…
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '20px' }}>
+                {admins.map((adm) => {
+                  const initials = (adm.name || 'Admin')
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2);
+
+                  return (
+                    <div 
+                      key={adm.id}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '24px',
+                        boxShadow: '0 4px 18px rgba(15, 23, 42, 0.04)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                              width: '46px',
+                              height: '46px',
+                              borderRadius: '12px',
+                              background: adm.isMaster ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+                              color: '#ffffff',
+                              display: 'grid',
+                              placeItems: 'center',
+                              fontWeight: 800,
+                              fontSize: '16px',
+                            }}>
+                              {initials}
+                            </div>
+                            <div>
+                              <b style={{ fontSize: '15px', color: '#1e293b', display: 'block' }}>
+                                {adm.name}
+                              </b>
+                              <span style={{ fontSize: '13px', color: '#64748b' }}>
+                                {adm.email}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '3px 9px',
+                            borderRadius: '12px',
+                            background: adm.isMaster ? '#fef3c7' : '#e0f2fe',
+                            color: adm.isMaster ? '#b45309' : '#0369a1',
+                            border: `1px solid ${adm.isMaster ? '#fde68a' : '#bae6fd'}`,
+                          }}>
+                            {adm.role || (adm.isMaster ? 'Super Admin' : 'Admin')}
+                          </span>
+                        </div>
+
+                        <div style={{ marginTop: '16px', fontSize: '12px', color: '#94a3b8' }}>
+                          📅 Registered: {new Date(adm.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </div>
+                      </div>
+
+                      <div style={{
+                        marginTop: '20px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #f1f5f9',
+                        display: 'flex',
+                        gap: '10px',
+                        justifyContent: 'flex-end',
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResetTargetUser(adm);
+                            setNewPasswordValue('');
+                            setShowResetPassModal(true);
+                          }}
+                          className="button outline"
+                          style={{ padding: '6px 12px', fontSize: '12px' }}
+                          title="Set new password for this admin"
+                        >
+                          🔑 Change Password
+                        </button>
+
+                        {!adm.isMaster && adm.id !== 'master_admin' && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAdmin(adm)}
+                            style={{
+                              background: '#fff1f2',
+                              border: '1px solid #fecdd3',
+                              color: '#e11d48',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                            title="Remove administrator access"
+                          >
+                            🗑 Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* LEAD DETAILS MODAL */}
@@ -532,16 +933,16 @@ export default function AdminDashboardPage() {
           <div style={{
             background: '#ffffff',
             borderRadius: '20px',
-            maxWidth: '560px',
+            maxWidth: '540px',
             width: '100%',
             padding: '30px',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.2)',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '20px', color: 'var(--navy)', margin: 0 }}>Enquiry Details</h3>
               <button 
                 onClick={() => setSelectedLead(null)}
-                style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}
               >
                 ✕
               </button>
@@ -549,53 +950,60 @@ export default function AdminDashboardPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '14px' }}>
               <div>
-                <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Name</small>
-                <b style={{ color: '#1e293b', fontSize: '16px' }}>{selectedLead.name}</b>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Client Name</small>
+                <b style={{ color: '#182238', fontSize: '16px' }}>{selectedLead.name}</b>
               </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Email</small>
-                  <a href={`mailto:${selectedLead.email}`} style={{ color: 'var(--blue)', fontWeight: 600 }}>{selectedLead.email}</a>
+                  <small style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Email</small>
+                  <a href={`mailto:${selectedLead.email}`} style={{ color: 'var(--blue)', textDecoration: 'none', fontWeight: 600 }}>
+                    {selectedLead.email}
+                  </a>
                 </div>
                 <div>
-                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Phone</small>
-                  <a href={`tel:${selectedLead.phone}`} style={{ color: '#1e293b', fontWeight: 600 }}>{selectedLead.phone || '—'}</a>
+                  <small style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Phone</small>
+                  {selectedLead.phone ? (
+                    <a href={`tel:${selectedLead.phone}`} style={{ color: 'var(--blue)', textDecoration: 'none', fontWeight: 600 }}>
+                      {selectedLead.phone}
+                    </a>
+                  ) : <span style={{ color: '#94a3b8' }}>Not provided</span>}
                 </div>
               </div>
+
               <div>
-                <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Requested Service</small>
-                <span style={{ background: '#f1f5f9', padding: '4px 10px', borderRadius: '6px', fontWeight: 600, display: 'inline-block', marginTop: '4px' }}>
-                  {selectedLead.service}
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Requested Service</small>
+                <span style={{ fontWeight: 600, color: 'var(--navy)' }}>{selectedLead.service}</span>
+              </div>
+
+              <div>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Project Details / Message</small>
+                <p style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #edf2f7', margin: '4px 0 0', lineHeight: 1.6, color: '#334155' }}>
+                  {selectedLead.message || 'No project description provided.'}
+                </p>
+              </div>
+
+              <div>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Received At</small>
+                <span style={{ color: '#64748b' }}>
+                  {new Date(selectedLead.created_at).toLocaleString('en-US', {
+                    dateStyle: 'full',
+                    timeStyle: 'short',
+                  })}
                 </span>
-              </div>
-              <div>
-                <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Proposal Requirements / Message</small>
-                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginTop: '4px', whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#334155' }}>
-                  {selectedLead.message || 'No project message provided.'}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
-                <div>
-                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Submitted Date</small>
-                  <span>{new Date(selectedLead.created_at).toLocaleString()}</span>
-                </div>
-                <div>
-                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Lead Status</small>
-                  <span style={{ fontWeight: 700, color: 'var(--orange)' }}>{selectedLead.status || 'New'}</span>
-                </div>
               </div>
             </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
               {selectedLead.phone && (
                 <a 
-                  href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(selectedLead.name)},%20thank%20you%20for%20consulting%20Soft%20Tech%20Solution.`}
-                  target="_blank"
+                  href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, '')}`} 
+                  target="_blank" 
                   rel="noopener noreferrer"
                   className="button primary"
                   style={{ padding: '8px 16px', fontSize: '13px' }}
                 >
-                  WhatsApp Lead 💬
+                  WhatsApp Client ↗
                 </a>
               )}
               <button 
@@ -607,6 +1015,236 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* CREATE NEW ADMIN MODAL */}
+      {showNewAdminModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(5px)',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '20px',
+          zIndex: 9999,
+        }}>
+          <form 
+            onSubmit={handleCreateAdmin}
+            style={{
+              background: '#ffffff',
+              borderRadius: '22px',
+              maxWidth: '500px',
+              width: '100%',
+              padding: '32px',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', color: 'var(--navy)', margin: 0 }}>Add New Administrator</h3>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '3px 0 0' }}>
+                  Create administrative credentials for a team member.
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowNewAdminModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
+                Full Name
+              </label>
+              <input 
+                type="text" 
+                required
+                placeholder="e.g. Aashutosh Kumar / Ankitosh Kumar"
+                value={newAdminForm.name}
+                onChange={e => setNewAdminForm(prev => ({ ...prev, name: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #d9dfeb',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
+                Admin Email Address
+              </label>
+              <input 
+                type="email" 
+                required
+                placeholder="colleague@softtechsolution.com"
+                value={newAdminForm.email}
+                onChange={e => setNewAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #d9dfeb',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
+                Role
+              </label>
+              <select
+                value={newAdminForm.role}
+                onChange={e => setNewAdminForm(prev => ({ ...prev, role: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #d9dfeb',
+                  fontSize: '14px',
+                  outline: 'none',
+                  background: '#ffffff',
+                }}
+              >
+                <option value="Admin">Administrator</option>
+                <option value="Tech Lead">Tech Lead (Engineering)</option>
+                <option value="Strategy Lead">Strategy Lead (Business)</option>
+                <option value="Operations">Operations &amp; Client Success</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '22px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
+                Password
+              </label>
+              <input 
+                type="password" 
+                required
+                placeholder="Min 6 characters"
+                value={newAdminForm.password}
+                onChange={e => setNewAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #d9dfeb',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                type="button"
+                onClick={() => setShowNewAdminModal(false)}
+                className="button outline"
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={creatingAdmin}
+                className="button primary"
+                style={{ padding: '10px 20px', fontSize: '13px' }}
+              >
+                {creatingAdmin ? 'Creating…' : 'Create Administrator →'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* CHANGE / RESET PASSWORD MODAL */}
+      {showResetPassModal && resetTargetUser && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(5px)',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '20px',
+          zIndex: 9999,
+        }}>
+          <form 
+            onSubmit={handleResetPassword}
+            style={{
+              background: '#ffffff',
+              borderRadius: '22px',
+              maxWidth: '460px',
+              width: '100%',
+              padding: '30px',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', color: 'var(--navy)', margin: 0 }}>Reset Password</h3>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '3px 0 0' }}>
+                  Updating access for <b>{resetTargetUser.name}</b> ({resetTargetUser.email})
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowResetPassModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '22px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
+                New Password
+              </label>
+              <input 
+                type="password" 
+                required
+                placeholder="Minimum 6 characters"
+                value={newPasswordValue}
+                onChange={e => setNewPasswordValue(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #d9dfeb',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                type="button"
+                onClick={() => setShowResetPassModal(false)}
+                className="button outline"
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={updatingPassword}
+                className="button primary"
+                style={{ padding: '10px 20px', fontSize: '13px' }}
+              >
+                {updatingPassword ? 'Updating…' : 'Update Password →'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

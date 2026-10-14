@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getEnv, signToken, verifyAdminRequest } from '@/lib/auth';
+import { getEnv, signToken, verifyAdminRequest, verifyPassword } from '@/lib/auth';
+import { findAdminByEmail } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -9,25 +10,68 @@ export async function GET(request) {
   if (!admin) {
     return NextResponse.json({ authenticated: false }, { status: 200 });
   }
-  return NextResponse.json({ authenticated: true, email: admin.sub }, { status: 200 });
+  return NextResponse.json({ 
+    authenticated: true, 
+    email: admin.sub,
+    name: admin.name || 'Admin',
+    role: admin.role || 'Admin',
+  }, { status: 200 });
 }
 
 export async function POST(request) {
   try {
     const { email, password } = await request.json().catch(() => ({}));
-    const expectedEmail = getEnv('ADMIN_EMAIL', 'admin@softtechsolution.com');
-    const expectedPassword = getEnv('ADMIN_PASSWORD', 'admin123');
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    }
 
-    if (email !== expectedEmail || password !== expectedPassword) {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const expectedMasterEmail = getEnv('ADMIN_EMAIL', 'admin@softtechsolution.com').toLowerCase();
+    const expectedMasterPassword = getEnv('ADMIN_PASSWORD', 'admin123');
+
+    let authenticatedUser = null;
+
+    // 1. Check database admin users
+    try {
+      const dbUser = await findAdminByEmail(normalizedEmail);
+      if (dbUser && dbUser.password_hash) {
+        if (verifyPassword(password, dbUser.password_hash)) {
+          authenticatedUser = dbUser;
+        }
+      }
+    } catch (e) {
+      console.warn('DB admin check error:', e);
+    }
+
+    // 2. Check master env credentials fallback if not yet matched
+    if (!authenticatedUser && normalizedEmail === expectedMasterEmail && password === expectedMasterPassword) {
+      authenticatedUser = {
+        name: 'Master Administrator',
+        email: expectedMasterEmail,
+        role: 'Super Admin',
+        isMaster: true,
+      };
+    }
+
+    if (!authenticatedUser) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
     const token = signToken({
-      sub: email,
+      sub: authenticatedUser.email,
+      name: authenticatedUser.name,
+      role: authenticatedUser.role || 'Admin',
       exp: Math.floor(Date.now() / 1000) + 28800, // 8 hours
     });
 
-    const response = NextResponse.json({ ok: true, email, token }, { status: 200 });
+    const response = NextResponse.json({ 
+      ok: true, 
+      email: authenticatedUser.email, 
+      name: authenticatedUser.name,
+      role: authenticatedUser.role || 'Admin',
+      token 
+    }, { status: 200 });
+
     response.cookies.set('sts_admin', token, {
       path: '/',
       httpOnly: true,
