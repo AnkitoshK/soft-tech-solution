@@ -217,7 +217,7 @@ async function generateDocx() {
 
           heading2('1.1 Executive Leadership'),
           boldPara('Aashutosh Kumar', 'Founder, Soft Tech Solution | Mobile/WhatsApp: +91 9117696512 | Image: Blue Coat Portrait'),
-          boldPara('Ankitosh Kumar', 'Co-Founder, Soft Tech Solution | Mobile/WhatsApp: +91 6205570278 | Image: Blue Blazer Portrait'),
+          boldPara('Ankitosh Kumar', 'Co-Founder, Soft Tech Solution | Mobile/WhatsApp: +91 6205570278 | Image: Blue Blazer Suit Portrait'),
           paragraph('Official Contact Email: softtechsolution@gmail.com | Official Live Website: https://soft-tech-solution-ebon.vercel.app/'),
 
           heading2('1.2 Official 10 Core Services (From Brand Poster)'),
@@ -284,7 +284,7 @@ async function generateDocx() {
 │   ├── auth.js                    # JWT HMAC signing & session verification
 │   └── db.js                      # Database client with local persistence & Supabase
 ├── public/
-│   ├── ankitosh-kumar-cofounder.jpeg # Ankitosh Kumar portrait (blue blazer)
+│   ├── ankitosh-kumar-cofounder.jpeg # Ankitosh Kumar portrait (blue blazer suit)
 │   ├── ashutosh-kumar-founder.jpeg   # Aashutosh Kumar portrait (blue coat)
 │   ├── Scan Photo.jpg                # High-res raw source portrait
 │   └── soft-tech-solution-logo.jpeg  # Official Company Logo

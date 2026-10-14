@@ -249,7 +249,7 @@ export default function HomePage() {
               <div className="founder-avatar-wrap ankitosh">
                 <img 
                   src="/ankitosh-kumar-cofounder.jpeg" 
-                  alt="Ankitosh Kumar, Co-Founder of Soft Tech Solution (in Blue Blazer)" 
+                  alt="Ankitosh Kumar, Co-Founder of Soft Tech Solution (in Blue Suit)" 
                 />
               </div>
               <h3>Ankitosh Kumar</h3>
