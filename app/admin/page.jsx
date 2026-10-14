@@ -491,12 +491,29 @@ export default function AdminDashboardPage() {
             </table>
           </div>
 
-          {filteredLeads.length === 0 && (
+          {leads.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '70px 20px', color: '#64748b' }}>
+              <div style={{ fontSize: '42px', marginBottom: '12px' }}>📬</div>
+              <p style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>No enquiries submitted yet</p>
+              <p style={{ fontSize: '14px', maxWidth: '460px', margin: '8px auto 20px', lineHeight: 1.6, color: '#64748b' }}>
+                Your Neon Postgres cloud database is connected and ready. Test it right now by submitting a proposal on the website:
+              </p>
+              <a 
+                href="/contact" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="button primary" 
+                style={{ padding: '10px 24px', fontSize: '13px', display: 'inline-block' }}
+              >
+                Open &quot;Get a Proposal&quot; Form ↗
+              </a>
+            </div>
+          ) : filteredLeads.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
               <p style={{ fontSize: '16px', fontWeight: 600 }}>No enquiries matching your search.</p>
               <p style={{ fontSize: '13px', marginTop: '4px' }}>Try switching the status filter or clearing your search term.</p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
