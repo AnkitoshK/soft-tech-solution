@@ -135,17 +135,13 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Admin ID is required.' }, { status: 400 });
     }
 
-    if (id === 'master_admin') {
-      return NextResponse.json({ error: 'The Master Administrator account cannot be deleted.' }, { status: 403 });
-    }
-
     const success = await deleteAdminUser(id);
     if (!success) {
-      return NextResponse.json({ error: 'Could not delete admin user. Account not found or protected.' }, { status: 404 });
+      return NextResponse.json({ error: 'Could not delete admin user. Account not found.' }, { status: 404 });
     }
 
     return NextResponse.json({ ok: true, message: 'Admin account removed successfully.' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Server error deleting admin user.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Server error deleting admin user.' }, { status: 400 });
   }
 }

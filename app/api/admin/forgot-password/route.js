@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/auth';
-import { findAdminByEmail, updateAdminPassword } from '@/lib/db';
+import { getAdminUsers, updateAdminPassword } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,10 +25,10 @@ export async function POST(request) {
     }
 
     // Verify account existence
-    const masterEmail = (process.env.ADMIN_EMAIL || 'admin@softtechsolution.com').toLowerCase();
-    const existing = await findAdminByEmail(cleanEmail);
+    const allAdmins = await getAdminUsers();
+    const existing = allAdmins.find(a => (a.email || '').toLowerCase() === cleanEmail);
 
-    if (!existing && cleanEmail !== masterEmail) {
+    if (!existing) {
       return NextResponse.json({ 
         error: 'No administrator account was found with this email address.' 
       }, { status: 404 });

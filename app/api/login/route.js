@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getEnv, signToken, verifyAdminRequest, verifyPassword } from '@/lib/auth';
-import { findAdminByEmail } from '@/lib/db';
+import { findAdminByEmail, getAdminUsers } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -43,14 +43,18 @@ export async function POST(request) {
       console.warn('DB admin check error:', e);
     }
 
-    // 2. Check master env credentials fallback if not yet matched
+    // 2. Check master env credentials fallback if not yet matched (only if master still exists or 0 admins exist)
     if (!authenticatedUser && normalizedEmail === expectedMasterEmail && password === expectedMasterPassword) {
-      authenticatedUser = {
-        name: 'Master Administrator',
-        email: expectedMasterEmail,
-        role: 'Super Admin',
-        isMaster: true,
-      };
+      const allAdmins = await getAdminUsers();
+      const masterStillExists = allAdmins.some(a => a.email.toLowerCase() === expectedMasterEmail || a.id === 'master_admin');
+      if (allAdmins.length === 0 || masterStillExists) {
+        authenticatedUser = {
+          name: 'Master Administrator',
+          email: expectedMasterEmail,
+          role: 'Super Admin',
+          isMaster: true,
+        };
+      }
     }
 
     if (!authenticatedUser) {

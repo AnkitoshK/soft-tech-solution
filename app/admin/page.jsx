@@ -272,13 +272,24 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Delete single admin ID
+  // Delete single admin ID (allows deleting master or normal ID)
   const handleDeleteAdmin = async (adminUser) => {
-    if (adminUser.isMaster || adminUser.id === 'master_admin') {
-      showToast('The Master Administrator account cannot be removed.', 'error');
+    if (admins.length <= 1) {
+      showToast('Cannot delete the last remaining administrator account. At least one admin ID must exist.', 'error');
       return;
     }
-    if (!window.confirm(`Are you sure you want to permanently delete Admin ID "${adminUser.id}" for "${adminUser.name}" (${adminUser.email})? This action cannot be undone.`)) {
+
+    const isCurrentLoggedIn = currentUser.email && adminUser.email && 
+      currentUser.email.toLowerCase() === adminUser.email.toLowerCase();
+
+    const isMaster = adminUser.isMaster || adminUser.id === 'master_admin';
+
+    let confirmMsg = `Are you sure you want to permanently delete ${isMaster ? 'Master ' : ''}Admin ID "${adminUser.id}" for "${adminUser.name}" (${adminUser.email})?`;
+    if (isCurrentLoggedIn) {
+      confirmMsg += `\n\n⚠️ NOTE: This is your currently logged-in account. Deleting it will log you out immediately.`;
+    }
+
+    if (!window.confirm(confirmMsg)) {
       return;
     }
 
@@ -291,6 +302,14 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         showToast(`Admin ID "${adminUser.id}" deleted successfully.`, 'info');
         setSelectedAdminIds(prev => prev.filter(id => id !== adminUser.id));
+
+        if (isCurrentLoggedIn) {
+          localStorage.removeItem('sts_admin_token');
+          setAuthenticated(false);
+          router.replace('/admin/login');
+          return;
+        }
+
         loadAdmins();
       } else {
         showToast(data.error || 'Could not delete admin ID.', 'error');
@@ -302,13 +321,17 @@ export default function AdminDashboardPage() {
 
   // Batch delete multiple selected admin IDs
   const handleBatchDeleteAdmins = async () => {
-    const deletableIds = selectedAdminIds.filter(id => id !== 'master_admin');
-    if (!deletableIds.length) {
-      showToast('Please select at least one created Admin ID to delete.', 'error');
+    if (!selectedAdminIds.length) {
+      showToast('Please select at least one Admin ID to delete.', 'error');
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to permanently delete all ${deletableIds.length} selected Admin ID(s)? This will remove their administrative access immediately.`)) {
+    if (admins.length - selectedAdminIds.length < 1) {
+      showToast('Cannot delete all administrator accounts. At least one admin ID must remain.', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to permanently delete all ${selectedAdminIds.length} selected Admin ID(s)? This action is permanent.`)) {
       return;
     }
 
@@ -317,12 +340,28 @@ export default function AdminDashboardPage() {
       const res = await fetch('/api/admin/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ ids: deletableIds }),
+        body: JSON.stringify({ ids: selectedAdminIds }),
       });
       const data = await res.json();
       if (res.ok) {
-        showToast(data.message || `${deletableIds.length} Admin ID(s) deleted successfully.`, 'info');
+        showToast(data.message || `${selectedAdminIds.length} Admin ID(s) deleted successfully.`, 'info');
         setSelectedAdminIds([]);
+
+        // If current user's email was among deleted IDs, log out
+        const currentUserDeleted = admins.some(a => 
+          selectedAdminIds.includes(a.id) && 
+          currentUser.email && 
+          a.email && 
+          a.email.toLowerCase() === currentUser.email.toLowerCase()
+        );
+
+        if (currentUserDeleted) {
+          localStorage.removeItem('sts_admin_token');
+          setAuthenticated(false);
+          router.replace('/admin/login');
+          return;
+        }
+
         loadAdmins();
       } else {
         showToast(data.error || 'Failed to delete selected Admin IDs.', 'error');
@@ -1049,18 +1088,18 @@ export default function AdminDashboardPage() {
                           <input
                             type="checkbox"
                             checked={
-                              filteredAdmins.filter(a => !a.isMaster && a.id !== 'master_admin').length > 0 &&
-                              filteredAdmins.filter(a => !a.isMaster && a.id !== 'master_admin').every(a => selectedAdminIds.includes(a.id))
+                              filteredAdmins.length > 0 &&
+                              filteredAdmins.every(a => selectedAdminIds.includes(a.id))
                             }
                             onChange={(e) => {
-                              const deletables = filteredAdmins.filter(a => !a.isMaster && a.id !== 'master_admin').map(a => a.id);
+                              const allIds = filteredAdmins.map(a => a.id);
                               if (e.target.checked) {
-                                setSelectedAdminIds(prev => Array.from(new Set([...prev, ...deletables])));
+                                setSelectedAdminIds(prev => Array.from(new Set([...prev, ...allIds])));
                               } else {
-                                setSelectedAdminIds(prev => prev.filter(id => !deletables.includes(id)));
+                                setSelectedAdminIds(prev => prev.filter(id => !allIds.includes(id)));
                               }
                             }}
-                            title="Select all created IDs for batch deletion"
+                            title="Select all IDs for batch deletion"
                             style={{ cursor: 'pointer' }}
                           />
                         </th>
@@ -1098,22 +1137,19 @@ export default function AdminDashboardPage() {
                             }}
                           >
                             <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                              {!isMaster ? (
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedAdminIds(prev => [...prev, adm.id]);
-                                    } else {
-                                      setSelectedAdminIds(prev => prev.filter(id => id !== adm.id));
-                                    }
-                                  }}
-                                  style={{ cursor: 'pointer' }}
-                                />
-                              ) : (
-                                <span title="Master ID cannot be deleted" style={{ color: '#cbd5e1', fontSize: '11px' }}>🔒</span>
-                              )}
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedAdminIds(prev => [...prev, adm.id]);
+                                  } else {
+                                    setSelectedAdminIds(prev => prev.filter(id => id !== adm.id));
+                                  }
+                                }}
+                                style={{ cursor: 'pointer' }}
+                                title={`Select ID: ${adm.id}`}
+                              />
                             </td>
 
                             <td style={{ padding: '14px 16px' }}>
@@ -1213,46 +1249,40 @@ export default function AdminDashboardPage() {
                                   🔑 Password
                                 </button>
 
-                                {!isMaster ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteAdmin(adm)}
-                                    style={{
-                                      background: '#fee2e2',
-                                      border: '1px solid #fca5a5',
-                                      color: '#dc2626',
-                                      padding: '5px 12px',
-                                      borderRadius: '6px',
-                                      fontSize: '11px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px',
-                                      transition: 'all 0.15s ease',
-                                    }}
-                                    onMouseEnter={(e) => {
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAdmin(adm)}
+                                  disabled={admins.length <= 1}
+                                  style={{
+                                    background: admins.length <= 1 ? '#f1f5f9' : '#fee2e2',
+                                    border: admins.length <= 1 ? '1px solid #e2e8f0' : '1px solid #fca5a5',
+                                    color: admins.length <= 1 ? '#94a3b8' : '#dc2626',
+                                    padding: '5px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    cursor: admins.length <= 1 ? 'not-allowed' : 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (admins.length > 1) {
                                       e.currentTarget.style.background = '#dc2626';
                                       e.currentTarget.style.color = '#ffffff';
-                                    }}
-                                    onMouseLeave={(e) => {
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (admins.length > 1) {
                                       e.currentTarget.style.background = '#fee2e2';
                                       e.currentTarget.style.color = '#dc2626';
-                                    }}
-                                    title={`Delete Admin ID: ${adm.id}`}
-                                  >
-                                    🗑 Delete ID
-                                  </button>
-                                ) : (
-                                  <span style={{
-                                    fontSize: '11px',
-                                    color: '#94a3b8',
-                                    fontWeight: 600,
-                                    padding: '5px 10px',
-                                  }} title="Master ID cannot be deleted">
-                                    🔒 Master ID
-                                  </span>
-                                )}
+                                    }
+                                  }}
+                                  title={admins.length <= 1 ? 'Cannot delete the only remaining admin account' : `Delete Admin ID: ${adm.id}`}
+                                >
+                                  🗑 Delete ID
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1294,21 +1324,19 @@ export default function AdminDashboardPage() {
                         {/* CARD TOPBAR */}
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {!isMaster && (
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedAdminIds(prev => [...prev, adm.id]);
-                                  } else {
-                                    setSelectedAdminIds(prev => prev.filter(id => id !== adm.id));
-                                  }
-                                }}
-                                style={{ cursor: 'pointer', marginRight: '2px' }}
-                                title="Select ID to delete"
-                              />
-                            )}
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedAdminIds(prev => [...prev, adm.id]);
+                                } else {
+                                  setSelectedAdminIds(prev => prev.filter(id => id !== adm.id));
+                                }
+                              }}
+                              style={{ cursor: 'pointer', marginRight: '2px' }}
+                              title={`Select ID: ${adm.id}`}
+                            />
                             <div style={{
                               width: '44px',
                               height: '44px',
@@ -1415,41 +1443,40 @@ export default function AdminDashboardPage() {
                           🔑 Password
                         </button>
 
-                        {!isMaster ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAdmin(adm)}
-                            style={{
-                              background: '#fee2e2',
-                              border: '1px solid #fca5a5',
-                              color: '#dc2626',
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAdmin(adm)}
+                          disabled={admins.length <= 1}
+                          style={{
+                            background: admins.length <= 1 ? '#f1f5f9' : '#fee2e2',
+                            border: admins.length <= 1 ? '1px solid #e2e8f0' : '1px solid #fca5a5',
+                            color: admins.length <= 1 ? '#94a3b8' : '#dc2626',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: admins.length <= 1 ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (admins.length > 1) {
                               e.currentTarget.style.background = '#dc2626';
                               e.currentTarget.style.color = '#ffffff';
-                            }}
-                            onMouseLeave={(e) => {
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (admins.length > 1) {
                               e.currentTarget.style.background = '#fee2e2';
                               e.currentTarget.style.color = '#dc2626';
-                            }}
-                            title={`Delete Admin ID: ${adm.id}`}
-                          >
-                            🗑 Delete ID
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
-                            🔒 Master ID
-                          </span>
-                        )}
+                            }
+                          }}
+                          title={admins.length <= 1 ? 'Cannot delete the only remaining admin account' : `Delete Admin ID: ${adm.id}`}
+                        >
+                          🗑 Delete ID
+                        </button>
                       </div>
                     </div>
                   );
