@@ -84,8 +84,23 @@ export default function AdminLoginPage() {
           border: '1px solid #e5ebf4',
         }}
       >
-        <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '22px', color: 'var(--navy)', marginBottom: '4px' }}>
-          Soft <b style={{ color: 'var(--orange)' }}>Tech</b> Solution
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <img 
+            src="/soft-tech-logo-transparent.png" 
+            alt="SoftTech Solution" 
+            style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
+          />
+          <div className="brand-lockup">
+            <span className="brand-shared-s" style={{ fontSize: '34px' }}>S</span>
+            <div className="brand-text-stack">
+              <span className="brand-top-text" style={{ fontSize: '16px' }}>
+                oft<b className="brand-tech-highlight">Tech</b>
+              </span>
+              <span className="brand-bottom-text" style={{ fontSize: '11px' }}>
+                olution
+              </span>
+            </div>
+          </div>
         </div>
         <h1 style={{ fontSize: '30px', margin: '14px 0 6px', color: '#182238' }}>Admin Login</h1>
         <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>

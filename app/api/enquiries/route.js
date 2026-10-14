@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { verifyAdminRequest } from '@/lib/auth';
 import { createEnquiry, getEnquiries, updateEnquiry, deleteEnquiry } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function safe(v, max = 5000) {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
 }

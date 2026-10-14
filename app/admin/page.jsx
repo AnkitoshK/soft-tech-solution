@@ -26,12 +26,17 @@ export default function AdminDashboardPage() {
       const url = `/api/enquiries${status !== 'All' ? `?status=${encodeURIComponent(status)}` : ''}`;
       const res = await fetch(url, {
         headers: getAuthHeaders(),
+        cache: 'no-store',
       });
       if (res.status === 401) {
         setAuthenticated(false);
         localStorage.removeItem('sts_admin_token');
         router.replace('/admin/login');
         return;
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server returned error ${res.status}`);
       }
       const data = await res.json();
       setLeads(Array.isArray(data) ? data : []);
@@ -165,12 +170,27 @@ export default function AdminDashboardPage() {
       <div style={{ background: '#ffffff', borderBottom: '1px solid #e5e9f1', padding: '18px 0' }}>
         <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
-            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '20px', color: 'var(--navy)' }}>
-              Soft <b style={{ color: 'var(--orange)' }}>Tech</b> Solution
-              <span style={{ fontSize: '13px', fontWeight: 500, color: '#6b7280', marginLeft: '10px' }}>/ Admin Dashboard</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img 
+                src="/soft-tech-logo-transparent.png" 
+                alt="SoftTech Solution" 
+                style={{ width: '34px', height: '34px', objectFit: 'contain' }} 
+              />
+              <div className="brand-lockup">
+                <span className="brand-shared-s" style={{ fontSize: '30px' }}>S</span>
+                <div className="brand-text-stack">
+                  <span className="brand-top-text" style={{ fontSize: '15px' }}>
+                    oft<b className="brand-tech-highlight">Tech</b>
+                  </span>
+                  <span className="brand-bottom-text" style={{ fontSize: '10px' }}>
+                    olution
+                  </span>
+                </div>
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', marginLeft: '6px' }}>/ Admin Dashboard</span>
             </div>
-            <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>
-              Leadership: Founder Aashutosh Kumar (+91 9876543753) · Co-Founder Ankitosh Kumar (+91 6205570278)
+            <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0' }}>
+              Leadership: Founder Aashutosh Kumar (+91 9117696512) · Co-Founder Ankitosh Kumar (+91 6205570278)
             </p>
           </div>
 

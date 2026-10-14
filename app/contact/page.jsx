@@ -2,7 +2,7 @@ import ContactForm from '@/components/ContactForm';
 
 export const metadata = {
   title: 'Contact Us | Soft Tech Solution',
-  description: 'Get in touch with Soft Tech Solution. Call Founder Aashutosh Kumar at +91 9876543753 or Co-Founder Ankitosh Kumar at +91 6205570278.',
+  description: 'Get in touch with Soft Tech Solution. Call Founder Aashutosh Kumar at +91 9117696512 or Co-Founder Ankitosh Kumar at +91 6205570278.',
 };
 
 export default function ContactPage() {
@@ -49,7 +49,7 @@ export default function ContactPage() {
                 <div>
                   <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Founder Direct Line</small>
                   <b style={{ fontSize: '15px', color: '#233453' }}>
-                    <a href="tel:+919876543753" style={{ textDecoration: 'none', color: 'inherit' }}>+91 9876543753</a>
+                    <a href="tel:+919117696512" style={{ textDecoration: 'none', color: 'inherit' }}>+91 9117696512</a>
                   </b>
                   <span style={{ display: 'block', fontSize: '12px', color: 'var(--orange)', fontWeight: 600 }}>Aashutosh Kumar (Founder)</span>
                 </div>
@@ -111,7 +111,7 @@ export default function ContactPage() {
               </p>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <a 
-                  href="https://wa.me/919876543753?text=Hello%20Aashutosh,%20I%20want%20to%20discuss%20a%20project%20for%20my%20business." 
+                  href="https://wa.me/919117696512?text=Hello%20Aashutosh,%20I%20want%20to%20discuss%20a%20project%20for%20my%20business." 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="button primary"

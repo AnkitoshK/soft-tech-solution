@@ -206,7 +206,7 @@ export default function ServicesPage() {
               Let’s build something<br /><em style={{ color: 'var(--gold)' }}>extraordinary.</em>
             </h2>
             <p style={{ color: '#c7d5ec', fontSize: '15px', lineHeight: 1.7 }}>
-              Founder Aashutosh Kumar: <a href="tel:+919876543753" style={{ color: '#ffffff', fontWeight: 700 }}>+91 9876543753</a><br />
+              Founder Aashutosh Kumar: <a href="tel:+919117696512" style={{ color: '#ffffff', fontWeight: 700 }}>+91 9117696512</a><br />
               Co-Founder Ankitosh Kumar: <a href="tel:+916205570278" style={{ color: '#ffffff', fontWeight: 700 }}>+91 6205570278</a>
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function ServicesPage() {
             <Link className="button primary" href="/contact">
               Get a Proposal <span>→</span>
             </Link>
-            <a className="button secondary" href="tel:+919876543753">
+            <a className="button secondary" href="tel:+919117696512">
               Call Aashutosh <span>📞</span>
             </a>
             <a className="button secondary" href="tel:+916205570278">

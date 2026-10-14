@@ -212,12 +212,12 @@ export default function HomePage() {
               <span className="founder-role-badge orange">Founder</span>
               
               <a 
-                href="tel:+919876543753" 
+                href="tel:+919117696512" 
                 className="founder-phone-chip" 
                 title="Call Founder Aashutosh Kumar"
               >
                 <span>📞</span>
-                <span>+91 9876543753</span>
+                <span>+91 9117696512</span>
               </a>
 
               <p className="founder-bio">
@@ -227,14 +227,14 @@ export default function HomePage() {
               <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
                 <a 
                   className="button primary" 
-                  href="tel:+919876543753" 
+                  href="tel:+919117696512" 
                   style={{ flex: 1, padding: '12px 14px', fontSize: '13px' }}
                 >
                   Call Aashutosh <span>📞</span>
                 </a>
                 <a 
                   className="button secondary" 
-                  href="https://wa.me/919876543753?text=Hi%20Aashutosh,%20I%20would%20like%20to%20discuss%20a%20project%20with%20Soft%20Tech%20Solution." 
+                  href="https://wa.me/919117696512?text=Hi%20Aashutosh,%20I%20would%20like%20to%20discuss%20a%20project%20with%20Soft%20Tech%20Solution." 
                   target="_blank" 
                   rel="noopener noreferrer"
                   style={{ flex: 1, padding: '12px 14px', fontSize: '13px' }}
@@ -392,7 +392,7 @@ export default function HomePage() {
               <span>✆</span>
               <div>
                 <small>Call or WhatsApp (Founder: Aashutosh Kumar)</small>
-                <strong><a href="tel:+919876543753" style={{ color: '#ffffff', textDecoration: 'none' }}>+91 9876543753</a></strong>
+                <strong><a href="tel:+919117696512" style={{ color: '#ffffff', textDecoration: 'none' }}>+91 9117696512</a></strong>
               </div>
             </div>
 

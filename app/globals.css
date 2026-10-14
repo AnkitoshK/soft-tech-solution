@@ -120,6 +120,7 @@ a {
   gap: 10px;
   text-decoration: none;
   cursor: pointer;
+  user-select: none;
 }
 
 .brand-logo-img {
@@ -127,12 +128,72 @@ a {
   height: 44px;
   object-fit: contain;
   transition: transform 0.25s ease;
+  flex-shrink: 0;
 }
 
 .brand:hover .brand-logo-img {
   transform: rotate(-6deg) scale(1.06);
 }
 
+/* Shared 'S' Typography Lockup (Upper-Lower / Uper-Niche) */
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.brand-shared-s {
+  font-family: 'Poppins', sans-serif;
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 0.82;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--navy) 25%, var(--orange) 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  user-select: none;
+  padding-right: 1px;
+}
+
+.brand-text-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1;
+  padding-left: 1px;
+}
+
+.brand-top-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--navy);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.brand-top-text b,
+.brand-tech-highlight {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.brand-bottom-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #4f5d75;
+  line-height: 1.05;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Legacy classes fallback */
 .brand-name {
   display: flex;
   flex-direction: column;
@@ -166,10 +227,19 @@ a {
   white-space: nowrap;
 }
 
+/* Footer variant */
+.footer-grid .brand-shared-s {
+  background: linear-gradient(135deg, #ffffff 30%, var(--orange) 95%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer-grid .brand-top-text,
 .footer-grid .brand-main {
   color: #ffffff;
 }
 
+.footer-grid .brand-bottom-text,
 .footer-grid .brand-sub {
   color: #a4b3d1;
 }

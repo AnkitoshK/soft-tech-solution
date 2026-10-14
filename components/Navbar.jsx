@@ -26,16 +26,23 @@ export default function Navbar() {
 
       <header className="site-header">
         <div className="wrap nav">
-          <Link href="/" className="brand" onClick={closeMenu} aria-label="softTech Solution Home">
+          <Link href="/" className="brand" onClick={closeMenu} aria-label="SoftTech Solution Home">
             <img 
               src="/soft-tech-logo-transparent.png" 
-              alt="softTech Solution" 
+              alt="SoftTech Solution" 
               className="brand-logo-img"
             />
-            <span className="brand-name">
-              <span className="brand-main">soft<b>Tech</b></span>
-              <span className="brand-sub">Solution</span>
-            </span>
+            <div className="brand-lockup">
+              <span className="brand-shared-s">S</span>
+              <div className="brand-text-stack">
+                <span className="brand-top-text">
+                  oft<b className="brand-tech-highlight">Tech</b>
+                </span>
+                <span className="brand-bottom-text">
+                  olution
+                </span>
+              </div>
+            </div>
           </Link>
 
           <button 

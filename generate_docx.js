@@ -197,7 +197,7 @@ async function generateDocx() {
             ['Production Admin Login', 'https://soft-tech-solution-ebon.vercel.app/admin/login'],
             ['Production Admin Dashboard', 'https://soft-tech-solution-ebon.vercel.app/admin'],
             ['GitHub Repository', 'https://github.com/AnkitoshK/soft-tech-solution'],
-            ['Founder', 'Aashutosh Kumar (Mobile: +91 9876543753)'],
+            ['Founder', 'Aashutosh Kumar (Mobile: +91 9117696512)'],
             ['Co-Founder', 'Ankitosh Kumar (Mobile: +91 6205570278)'],
             ['Primary Framework', 'Next.js 16 (App Router) + React 19 + Node.js 22'],
             ['Database', 'PostgreSQL / Supabase (with resilient local persistence fallback)'],
@@ -216,7 +216,7 @@ async function generateDocx() {
           ),
 
           heading2('1.1 Executive Leadership'),
-          boldPara('Aashutosh Kumar', 'Founder, Soft Tech Solution | Mobile/WhatsApp: +91 9876543753 | Image: Blue Coat Portrait'),
+          boldPara('Aashutosh Kumar', 'Founder, Soft Tech Solution | Mobile/WhatsApp: +91 9117696512 | Image: Blue Coat Portrait'),
           boldPara('Ankitosh Kumar', 'Co-Founder, Soft Tech Solution | Mobile/WhatsApp: +91 6205570278 | Image: White Shirt Portrait'),
           paragraph('Official Contact Email: softtechsolution@gmail.com | Official Live Website: https://soft-tech-solution-ebon.vercel.app/'),
 
@@ -353,7 +353,7 @@ const handleSubmit = async (e) => {
     showToast('Thank you for consulting us, our team will contact you within 24 to 48 hours.', 'success');
     setFormData({ name: '', phone: '', email: '', service: 'Web Development', message: '' });
   } catch (err) {
-    showToast('Something went wrong. Please call +91 9876543753 or +91 6205570278.', 'error');
+    showToast('Something went wrong. Please call +91 9117696512 or +91 6205570278.', 'error');
   } finally {
     setLoading(false);
   }

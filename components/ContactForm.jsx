@@ -45,7 +45,7 @@ export default function ContactForm({ isLarge = false }) {
         message: '',
       });
     } catch (err) {
-      showToast(err.message || 'Something went wrong. Please call +91 9876543753 or +91 6205570278.', 'error');
+      showToast(err.message || 'Something went wrong. Please call +91 9117696512 or +91 6205570278.', 'error');
     } finally {
       setLoading(false);
     }

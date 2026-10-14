@@ -19,7 +19,7 @@ A production fullstack **Next.js (App Router)** website and client lead manageme
 ## 👥 Executive Leadership
 
 - **Aashutosh Kumar** — *Founder*, Soft Tech Solution
-  - 📞 **Mobile / WhatsApp:** `+91 9876543753`
+  - 📞 **Mobile / WhatsApp:** `+91 9117696512`
   - ✉️ **Email:** `softtechsolution@gmail.com`
   - 🖼️ **Portrait:** [`public/ashutosh-kumar-founder.jpeg`](public/ashutosh-kumar-founder.jpeg) *(in blue coat)*
 
@@ -181,7 +181,7 @@ soft-tech/
 ---
 
 ## 📞 Leadership Contacts
-- **Aashutosh Kumar (Founder):** [+91 9876543753](tel:+919876543753)
+- **Aashutosh Kumar (Founder):** [+91 9117696512](tel:+919117696512)
 - **Ankitosh Kumar (Co-Founder):** [+91 6205570278](tel:+916205570278)
 - **Live Site:** [https://soft-tech-solution-ebon.vercel.app/](https://soft-tech-solution-ebon.vercel.app/)
 - **Admin Portal:** [https://soft-tech-solution-ebon.vercel.app/admin/login](https://soft-tech-solution-ebon.vercel.app/admin/login)

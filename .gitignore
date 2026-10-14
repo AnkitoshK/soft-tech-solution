@@ -24,3 +24,6 @@ Thumbs.db
 
 # Data
 /.data/
+
+# Raw large uncompressed assets
+public/ankitosh-kumar-cofounder.jpg

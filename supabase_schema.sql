@@ -17,5 +17,7 @@ create index if not exists enquiries_created_at_idx on public.enquiries(created_
 create index if not exists enquiries_status_idx on public.enquiries(status);
 
 alter table public.enquiries enable row level security;
--- The website talks to this table only through the server-side service-role key.
--- No public/anonymous policy is created intentionally.
+-- Allow anonymous/public visitors to insert enquiries from website
+create policy "Allow public lead submissions" on public.enquiries for insert with check (true);
+-- Allow service_role full management access
+create policy "Allow service_role full access" on public.enquiries for all using (true) with check (true);
