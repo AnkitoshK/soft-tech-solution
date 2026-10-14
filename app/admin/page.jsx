@@ -13,12 +13,25 @@ export default function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [dbInfo, setDbInfo] = useState(null);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
 
   const getAuthHeaders = () => {
     if (typeof window === 'undefined') return {};
     const token = localStorage.getItem('sts_admin_token');
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   };
+
+  const fetchDbStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/db-status', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setDbInfo(data);
+      }
+    } catch {}
+  }, []);
 
   const loadLeads = useCallback(async (status = 'All') => {
     setRefreshing(true);
@@ -40,12 +53,13 @@ export default function AdminDashboardPage() {
       }
       const data = await res.json();
       setLeads(Array.isArray(data) ? data : []);
+      fetchDbStatus();
     } catch (err) {
       showToast('Could not load enquiries: ' + err.message, 'error');
     } finally {
       setRefreshing(false);
     }
-  }, [router, showToast]);
+  }, [router, showToast, fetchDbStatus]);
 
   // Check session on mount
   useEffect(() => {
@@ -58,6 +72,7 @@ export default function AdminDashboardPage() {
         if (data.authenticated) {
           setAuthenticated(true);
           loadLeads(statusFilter);
+          fetchDbStatus();
         } else {
           setAuthenticated(false);
           router.replace('/admin/login');
@@ -70,7 +85,7 @@ export default function AdminDashboardPage() {
       }
     }
     checkAuth();
-  }, [router, statusFilter, loadLeads]);
+  }, [router, statusFilter, loadLeads, fetchDbStatus]);
 
   const handleLogout = async () => {
     try {
@@ -170,7 +185,7 @@ export default function AdminDashboardPage() {
       <div style={{ background: '#ffffff', borderBottom: '1px solid #e5e9f1', padding: '18px 0' }}>
         <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <img 
                 src="/soft-tech-logo-transparent.png" 
                 alt="SoftTech Solution" 
@@ -188,6 +203,31 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', marginLeft: '6px' }}>/ Admin Dashboard</span>
+              
+              {/* DATABASE STATUS BADGE */}
+              {dbInfo && (
+                <span 
+                  onClick={() => setShowSetupModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    background: dbInfo.connected ? '#dcfce7' : '#fef3c7',
+                    color: dbInfo.connected ? '#15803d' : '#b45309',
+                    border: `1px solid ${dbInfo.connected ? '#bbf7d0' : '#fde68a'}`,
+                    marginLeft: '8px',
+                    cursor: 'pointer',
+                  }}
+                  title={dbInfo.message}
+                >
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dbInfo.connected ? '#22c55e' : '#f59e0b' }}></span>
+                  {dbInfo.badge}
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0' }}>
               Leadership: Founder Aashutosh Kumar (+91 9117696512) · Co-Founder Ankitosh Kumar (+91 6205570278)
@@ -223,6 +263,43 @@ export default function AdminDashboardPage() {
 
       {/* DASHBOARD CONTENT */}
       <div className="wrap" style={{ marginTop: '28px' }}>
+
+        {/* CLOUD DATABASE NOTICE BANNER (WHEN NOT YET LINKED IN VERCEL) */}
+        {dbInfo && !dbInfo.connected && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+            border: '1px solid #fcd34d',
+            borderRadius: '16px',
+            padding: '18px 24px',
+            marginBottom: '28px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.08)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <span style={{ fontSize: '28px' }}>⚡</span>
+              <div>
+                <b style={{ color: '#92400e', fontSize: '15px', display: 'block' }}>
+                  Enable Permanent Cloud Storage (Neon Postgres)
+                </b>
+                <p style={{ color: '#78350f', fontSize: '13px', margin: '3px 0 0', lineHeight: 1.5 }}>
+                  Vercel serverless containers are ephemeral. Connect free Neon Postgres under your Vercel project's <b>Storage</b> tab so every client proposal is saved permanently.
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowSetupModal(true)}
+              className="button primary"
+              style={{ padding: '9px 18px', fontSize: '12px', whiteSpace: 'nowrap' }}
+            >
+              30-Sec Setup Guide ↗
+            </button>
+          </div>
+        )}
+
         {/* STATS CARDS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px', marginBottom: '28px' }}>
           <div style={{ background: '#ffffff', padding: '22px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(24, 34, 56, 0.05)', border: '1px solid #edf2f7' }}>
@@ -301,9 +378,9 @@ export default function AdminDashboardPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '850px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #edf0f5' }}>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Lead Details</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Requested Service</th>
-                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Project Message</th>
+                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Client / Lead</th>
+                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Service</th>
+                  <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Proposal Request</th>
                   <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Pipeline Status</th>
                   <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Received Date</th>
                   <th style={{ padding: '16px 20px', fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Actions</th>
@@ -313,7 +390,7 @@ export default function AdminDashboardPage() {
                 {filteredLeads.map(lead => (
                   <tr key={lead.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
-                      <b style={{ color: '#1e293b', fontSize: '14px' }}>{lead.name}</b>
+                      <b style={{ color: '#1e293b', fontSize: '14px', display: 'block' }}>{lead.name}</b>
                       <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                         <a href={`mailto:${lead.email}`} style={{ color: 'var(--blue)', textDecoration: 'none' }}>{lead.email}</a>
                       </div>
@@ -331,7 +408,13 @@ export default function AdminDashboardPage() {
                     </td>
 
                     <td style={{ padding: '16px 20px', verticalAlign: 'top', fontSize: '13px', color: '#475569', maxWidth: '300px' }}>
-                      {lead.message || '—'}
+                      <div 
+                        onClick={() => setSelectedLead(lead)} 
+                        style={{ cursor: 'pointer', lineClamp: 3, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                        title="Click to view full message"
+                      >
+                        {lead.message || '—'}
+                      </div>
                     </td>
 
                     <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
@@ -369,21 +452,38 @@ export default function AdminDashboardPage() {
                     </td>
 
                     <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
-                      <button 
-                        onClick={() => handleDeleteLead(lead.id)}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          border: '1px solid #fecaca',
-                          background: '#fff1f2',
-                          color: '#e11d48',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Delete
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => setSelectedLead(lead)}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid #dbeafe',
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteLead(lead.id)}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid #fecaca',
+                            background: '#fff1f2',
+                            color: '#e11d48',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -399,6 +499,188 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* LEAD DETAILS MODAL */}
+      {selectedLead && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '20px',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            maxWidth: '560px',
+            width: '100%',
+            padding: '30px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '20px', color: 'var(--navy)', margin: 0 }}>Enquiry Details</h3>
+              <button 
+                onClick={() => setSelectedLead(null)}
+                style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '14px' }}>
+              <div>
+                <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Name</small>
+                <b style={{ color: '#1e293b', fontSize: '16px' }}>{selectedLead.name}</b>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Email</small>
+                  <a href={`mailto:${selectedLead.email}`} style={{ color: 'var(--blue)', fontWeight: 600 }}>{selectedLead.email}</a>
+                </div>
+                <div>
+                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Phone</small>
+                  <a href={`tel:${selectedLead.phone}`} style={{ color: '#1e293b', fontWeight: 600 }}>{selectedLead.phone || '—'}</a>
+                </div>
+              </div>
+              <div>
+                <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Requested Service</small>
+                <span style={{ background: '#f1f5f9', padding: '4px 10px', borderRadius: '6px', fontWeight: 600, display: 'inline-block', marginTop: '4px' }}>
+                  {selectedLead.service}
+                </span>
+              </div>
+              <div>
+                <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Proposal Requirements / Message</small>
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginTop: '4px', whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#334155' }}>
+                  {selectedLead.message || 'No project message provided.'}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
+                <div>
+                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Submitted Date</small>
+                  <span>{new Date(selectedLead.created_at).toLocaleString()}</span>
+                </div>
+                <div>
+                  <small style={{ color: '#8590a0', fontWeight: 600, display: 'block' }}>Lead Status</small>
+                  <span style={{ fontWeight: 700, color: 'var(--orange)' }}>{selectedLead.status || 'New'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              {selectedLead.phone && (
+                <a 
+                  href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(selectedLead.name)},%20thank%20you%20for%20consulting%20Soft%20Tech%20Solution.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button primary"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                >
+                  WhatsApp Lead 💬
+                </a>
+              )}
+              <button 
+                onClick={() => setSelectedLead(null)}
+                className="button outline"
+                style={{ padding: '8px 16px', fontSize: '13px' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CLOUD DB SETUP MODAL */}
+      {showSetupModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(5px)',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '20px',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '22px',
+            maxWidth: '620px',
+            width: '100%',
+            padding: '32px',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '26px' }}>🐘</span>
+                <div>
+                  <h3 style={{ fontSize: '20px', color: 'var(--navy)', margin: 0 }}>Connect Neon Postgres (Vercel Storage)</h3>
+                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>Permanent serverless storage for all client proposals.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowSetupModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+              <b style={{ color: '#0f172a', fontSize: '14px', display: 'block', marginBottom: '6px' }}>
+                Why is this needed on Vercel?
+              </b>
+              <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
+                Vercel runs on stateless serverless functions. When a client submits an enquiry, it runs inside an isolated container. Without a cloud database, local files and memory disappear when containers sleep. Linking Neon Postgres connects your app to permanent storage in 3 clicks.
+              </p>
+            </div>
+
+            <h4 style={{ fontSize: '14px', color: '#1e293b', marginBottom: '12px' }}>
+              Quick 3-Click Setup in Vercel:
+            </h4>
+            <ol style={{ fontSize: '13px', color: '#334155', lineHeight: 1.8, paddingLeft: '20px', margin: '0 0 24px' }}>
+              <li>
+                Open your project on <b>Vercel Dashboard</b> (<a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue)', fontWeight: 600 }}>vercel.com/dashboard ↗</a>).
+              </li>
+              <li>
+                Click the <b>Storage</b> tab at the top of your project page.
+              </li>
+              <li>
+                Click <b>Create Database</b> → Select <b>Postgres (Powered by Neon)</b>.
+              </li>
+              <li>
+                Click <b>Continue</b> → Click <b>Connect to Project</b> (select <code style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>soft-tech-solution-ebon</code>).
+              </li>
+            </ol>
+
+            <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', color: '#065f46', marginBottom: '24px' }}>
+              ✓ <b>Zero manual schema setup:</b> The table and indexes are automatically created on the first request. As soon as connected in Vercel, the status badge will turn green automatically!
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <a 
+                href="https://vercel.com/dashboard" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="button primary"
+                style={{ padding: '9px 18px', fontSize: '13px' }}
+              >
+                Go to Vercel Storage ↗
+              </a>
+              <button 
+                onClick={() => setShowSetupModal(false)}
+                className="button outline"
+                style={{ padding: '9px 18px', fontSize: '13px' }}
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

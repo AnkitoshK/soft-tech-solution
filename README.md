@@ -126,18 +126,26 @@ A production fullstack **Next.js (App Router)** website and client lead manageme
      * `ADMIN_EMAIL` — `admin@softtechsolution.com`
      * `ADMIN_PASSWORD` — your strong admin password
      * `ADMIN_SESSION_SECRET` — a random 32+ character string
+     * `POSTGRES_URL` or `DATABASE_URL` — (recommended) Neon / Vercel Postgres connection string
      * `SUPABASE_URL` — (optional) Supabase project URL
      * `SUPABASE_SERVICE_ROLE_KEY` — (optional) Supabase service role key
 
 ---
 
-## 🗄️ Database Setup (Supabase / Postgres)
+## 🗄️ Database Setup (Neon / Vercel Postgres — Recommended)
 
+To ensure client proposals and inquiries are permanently stored and visible in the Admin Panel on Vercel:
+
+1. Open your project on the [Vercel Dashboard](https://vercel.com/dashboard).
+2. Click the **Storage** tab.
+3. Click **Create Database** and select **Postgres (Powered by Neon)**.
+4. Click **Continue** and connect it to your project (`soft-tech-solution-ebon`).
+5. **Done!** Vercel automatically configures `POSTGRES_URL`. The table and indexes self-initialize on the first submission.
+
+### Alternative: Supabase
 1. Create a free project at [supabase.com](https://supabase.com).
-2. Go to **SQL Editor** in your Supabase dashboard.
-3. Paste and run the SQL from `supabase_schema.sql`.
-4. Copy your **Project URL** and **Service Role API Key** from `Project Settings > API`.
-5. Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to your `.env.local` or Vercel Environment Variables.
+2. Go to **SQL Editor** and run `supabase_schema.sql`.
+3. Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel **Settings > Environment Variables**.
 
 ---
 
