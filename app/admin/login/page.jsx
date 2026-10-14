@@ -210,13 +210,13 @@ export default function AdminLoginPage() {
       >
         {/* BRAND LOGO HEADER */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <img 
+            src="/soft-tech-logo-transparent.png" 
+            alt="SoftTech Solution" 
+            style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
+          />
           <div className="brand-lockup">
-            <img 
-              src="/soft-tech-logo-transparent.png" 
-              alt="SoftTech Solution Logo" 
-              className="brand-logo-img brand-logo-as-s" 
-              style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
-            />
+            <span className="brand-shared-s" style={{ fontSize: '34px' }}>S</span>
             <div className="brand-text-stack">
               <span className="brand-top-text" style={{ fontSize: '16px' }}>
                 oft<b className="brand-tech-highlight">Tech</b>

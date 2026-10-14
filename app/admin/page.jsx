@@ -335,13 +335,13 @@ export default function AdminDashboardPage() {
         <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <img 
+                src="/soft-tech-logo-transparent.png" 
+                alt="SoftTech Solution" 
+                style={{ width: '34px', height: '34px', objectFit: 'contain' }} 
+              />
               <div className="brand-lockup">
-                <img 
-                  src="/soft-tech-logo-transparent.png" 
-                  alt="SoftTech Solution Logo" 
-                  className="brand-logo-img brand-logo-as-s" 
-                  style={{ width: '34px', height: '34px', objectFit: 'contain' }} 
-                />
+                <span className="brand-shared-s" style={{ fontSize: '30px' }}>S</span>
                 <div className="brand-text-stack">
                   <span className="brand-top-text" style={{ fontSize: '15px' }}>
                     oft<b className="brand-tech-highlight">Tech</b>

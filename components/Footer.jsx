@@ -9,13 +9,14 @@ export default function Footer() {
           {/* COL 1: BRAND & MISSION */}
           <div className="footer-col brand-col">
             <Link href="/" className="brand" aria-label="SoftTech Solution">
+              <img 
+                src="/soft-tech-logo-transparent.png" 
+                alt="SoftTech Solution" 
+                className="brand-logo-img" 
+                style={{ width: '44px', height: '44px', objectFit: 'contain' }} 
+              />
               <div className="brand-lockup">
-                <img 
-                  src="/soft-tech-logo-transparent.png" 
-                  alt="SoftTech Solution Logo" 
-                  className="brand-logo-img brand-logo-as-s" 
-                  style={{ width: '42px', height: '42px', objectFit: 'contain' }} 
-                />
+                <span className="brand-shared-s" style={{ fontSize: '32px' }}>S</span>
                 <div className="brand-text-stack">
                   <span className="brand-top-text" style={{ fontSize: '15px' }}>
                     oft<b className="brand-tech-highlight">Tech</b>
