@@ -28,20 +28,14 @@ export default function Footer() {
               </div>
             </Link>
             <p className="footer-tagline">
-              <strong>IDEAS | CODE | SOLUTIONS</strong>
+              <strong>IDEAS | CODE | SOLUTIONS · EST. SEPT 2026</strong>
             </p>
             <p className="footer-desc">
-              Your Growth, Our Mission. We engineer custom web software, high-converting digital campaigns, and branding built to scale businesses.
+              Founded in September 2026. Enterprise-grade engineering, custom web applications, and ROI-driven marketing led by MCA post-graduates with tier-one corporate industry experience.
             </p>
             <div className="footer-contact-item">
               <span className="footer-icon">✉</span>
               <a href="mailto:softtechsolution@gmail.com">softtechsolution@gmail.com</a>
-            </div>
-            <div className="footer-contact-item">
-              <span className="footer-icon">🌐</span>
-              <a href="https://soft-tech-solution-ebon.vercel.app/" target="_blank" rel="noopener noreferrer">
-                soft-tech-solution-ebon.vercel.app
-              </a>
             </div>
           </div>
 
@@ -53,7 +47,10 @@ export default function Footer() {
             <div className="footer-founder-card">
               <div className="footer-founder-info">
                 <strong className="footer-founder-name">Aashutosh Kumar</strong>
-                <span className="footer-founder-role">Founder &amp; Strategy</span>
+                <span className="footer-founder-role">Founder &amp; Strategy · MCA</span>
+                <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', margin: '2px 0 8px' }}>
+                  🏢 Railworld (Railworld India) Alumni
+                </span>
               </div>
               <div className="footer-founder-actions">
                 <a href="tel:+919117696512" className="footer-call-btn">
@@ -75,7 +72,10 @@ export default function Footer() {
             <div className="footer-founder-card" style={{ marginTop: '14px' }}>
               <div className="footer-founder-info">
                 <strong className="footer-founder-name">Ankitosh Kumar</strong>
-                <span className="footer-founder-role">Co-Founder &amp; Technology</span>
+                <span className="footer-founder-role">Co-Founder &amp; Tech Lead · MCA</span>
+                <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', margin: '2px 0 8px' }}>
+                  🏢 Tata Power (Tata Power Co. Ltd) Alumni
+                </span>
               </div>
               <div className="footer-founder-actions">
                 <a href="tel:+916205570278" className="footer-call-btn">
@@ -135,10 +135,10 @@ export default function Footer() {
         {/* BOTTOM COPYRIGHT STRIP */}
         <div className="footer-bottom-bar">
           <p className="footer-copyright">
-            © {new Date().getFullYear()} <strong>Soft Tech Solution</strong>. All rights reserved. Your Growth, Our Mission.
+            © {new Date().getFullYear()} <strong>Soft Tech Solution</strong>. Founded September 2026. All rights reserved.
           </p>
           <div className="footer-meta-links">
-            <span>Founded by Aashutosh Kumar &amp; Ankitosh Kumar</span>
+            <span>Leadership: Aashutosh Kumar (Ex-Railworld) &amp; Ankitosh Kumar (Ex-Tata Power)</span>
           </div>
         </div>
       </div>

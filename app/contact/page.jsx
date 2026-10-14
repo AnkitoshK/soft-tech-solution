@@ -82,22 +82,15 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* WEBSITE */}
+              {/* WORKING HOURS */}
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <span style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#eaf7ef', color: '#16a34a', display: 'grid', placeItems: 'center', fontSize: '18px' }}>
-                  🌐
+                  ⏰
                 </span>
                 <div>
-                  <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Official Website</small>
+                  <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Working Hours</small>
                   <b style={{ fontSize: '14px', color: '#233453' }}>
-                    <a 
-                      href="https://soft-tech-solution-ebon.vercel.app/" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      soft-tech-solution-ebon.vercel.app
-                    </a>
+                    Mon – Sat, 9:00 AM – 7:30 PM IST
                   </b>
                 </div>
               </div>

@@ -209,7 +209,16 @@ export default function HomePage() {
                 />
               </div>
               <h3>Aashutosh Kumar</h3>
-              <span className="founder-role-badge orange">Founder</span>
+              <span className="founder-role-badge orange">Founder &amp; Strategy Lead</span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', margin: '8px 0 14px', width: '100%' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', background: '#f1f5f9', padding: '4px 10px', borderRadius: '6px' }}>
+                  🎓 MCA (Master of Computer Applications)
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', background: '#e0f2fe', padding: '4px 10px', borderRadius: '6px' }}>
+                  🏢 Ex-Railworld (Railworld India Pvt Ltd)
+                </span>
+              </div>
               
               <a 
                 href="tel:+919117696512" 
@@ -221,7 +230,7 @@ export default function HomePage() {
               </a>
 
               <p className="founder-bio">
-                “I started Soft Tech Solution with a simple conviction: every ambitious business deserves a powerful, authentic way to scale online. We combine high-converting creative with practical strategy so our partners thrive.”
+                “With an MCA degree and software engineering experience at Railworld, I founded Soft Tech Solution in September 2026. Every business deserves authentic, reliable digital growth built on disciplined architecture and measurable customer acquisition.”
               </p>
               
               <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
@@ -253,7 +262,16 @@ export default function HomePage() {
                 />
               </div>
               <h3>Ankitosh Kumar</h3>
-              <span className="founder-role-badge blue">Co-Founder</span>
+              <span className="founder-role-badge blue">Co-Founder &amp; Tech Lead</span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', margin: '8px 0 14px', width: '100%' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', background: '#f1f5f9', padding: '4px 10px', borderRadius: '6px' }}>
+                  🎓 MCA (Master of Computer Applications)
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534', background: '#dcfce7', padding: '4px 10px', borderRadius: '6px' }}>
+                  🏢 Ex-Tata Power (Tata Power Co. Ltd)
+                </span>
+              </div>
               
               <a 
                 href="tel:+916205570278" 
@@ -265,7 +283,7 @@ export default function HomePage() {
               </a>
 
               <p className="founder-bio">
-                “Engineering scalable technology, Next.js web applications, and data-backed digital systems. We architect experiences that don’t just look exceptional, but convert cold traffic into loyal brand advocates.”
+                “Armed with an MCA degree and enterprise software engineering experience at Tata Power, I lead our technical architecture. We engineer robust, modern Next.js applications and cloud infrastructures built to convert traffic into scalable business revenue.”
               </p>
               <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
                 <a 
@@ -413,19 +431,10 @@ export default function HomePage() {
             </div>
 
             <div className="contact-method">
-              <span>🌐</span>
+              <span>⏰</span>
               <div>
-                <small>Visit our live site</small>
-                <strong>
-                  <a 
-                    href="https://soft-tech-solution-ebon.vercel.app/" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={{ color: '#ffffff', textDecoration: 'none' }}
-                  >
-                    soft-tech-solution-ebon.vercel.app
-                  </a>
-                </strong>
+                <small>Consultation Hours</small>
+                <strong style={{ color: '#ffffff' }}>Mon – Sat, 9:00 AM – 7:30 PM IST</strong>
               </div>
             </div>
           </div>
