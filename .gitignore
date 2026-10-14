@@ -18,9 +18,10 @@ yarn-error.log*
 # Vercel
 .vercel
 
-# OS
+# OS & Temp
 .DS_Store
 Thumbs.db
+~$*
 
 # Data
 /.data/
