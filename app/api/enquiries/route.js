@@ -71,6 +71,9 @@ export async function PATCH(request) {
     }
 
     const updated = await updateEnquiry(id, updates);
+    if (!updated) {
+      return NextResponse.json({ error: 'Lead not found or update failed.' }, { status: 404 });
+    }
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
@@ -90,7 +93,10 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Missing enquiry id' }, { status: 400 });
     }
 
-    await deleteEnquiry(id);
+    const deleted = await deleteEnquiry(id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Lead not found or delete failed.' }, { status: 404 });
+    }
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
