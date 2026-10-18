@@ -26,6 +26,86 @@ function numberToWordsINR(amount) {
   return inWords(n) + ' Rupees Only';
 }
 
+function printReceiptElement(elementId, title = 'Soft Tech Solution - Fee Payment Receipt') {
+  if (typeof window === 'undefined') return;
+  const content = document.getElementById(elementId);
+  if (!content) {
+    window.print();
+    return;
+  }
+
+  const existingFrame = document.getElementById('sts-payment-print-iframe');
+  if (existingFrame) existingFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'sts-payment-print-iframe';
+  iframe.setAttribute('style', 'position:fixed;top:-10000px;left:-10000px;width:820px;height:1150px;border:none;opacity:0;pointer-events:none;');
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>${title}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 10mm 14mm 10mm 14mm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.45;
+          }
+          .print-wrapper {
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            background: #ffffff;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .receipt-no-print, button {
+            display: none !important;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-wrapper">
+          ${content.innerHTML}
+        </div>
+      </body>
+    </html>
+  `);
+  doc.close();
+
+  setTimeout(() => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch (err) {
+      console.warn('Iframe print error', err);
+      window.print();
+    }
+  }, 280);
+}
+
 function PaymentContent() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get('id');
@@ -1118,7 +1198,7 @@ function PaymentContent() {
               </p>
 
               <a
-                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir, I have registered for the course.\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nCourse: ${candidate.course}\nAmount: ₹${candidate.amount || amount}\nUTR/Ref: ${candidate.utr_number || utrNumber || 'PAID'}\nReceipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'N/A'}`)}`}
+                href={`https://wa.me/919117696512?text=${encodeURIComponent(`Hello Sir,\nHere is my course enrollment and payment details:\n\n🎓 Candidate ID: ${candidate.candidate_id}\n👤 Candidate Name: ${candidate.name}\n👨‍👦 Father's Name: ${candidate.father_name || 'N/A'}\n📞 Contact: +91 ${candidate.contact_number}\n✉️ Email: ${candidate.email}\n📚 Course: ${candidate.course}\n💰 Amount: ₹${candidate.amount || amount}\n🔢 Bank UTR: ${candidate.utr_number || utrNumber || 'PAID'}\n📄 Receipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'PENDING'}\n\nPlease confirm my training onboarding schedule. Thank you!`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -1136,7 +1216,7 @@ function PaymentContent() {
                   boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)'
                 }}
               >
-                <span>💬 WhatsApp Payment Receipt to Mentors</span>
+                <span>💬 WhatsApp Payment Details (to 9117696512)</span>
               </a>
             </div>
 
@@ -1149,95 +1229,115 @@ function PaymentContent() {
       {/* ============================================================
           OFFICIAL FEE PAYMENT RECEIPT & ADMISSION CONFIRMATION MODAL
           ============================================================ */}
-      {showSuccessModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99999,
-            background: 'rgba(15, 23, 42, 0.8)',
-            backdropFilter: 'blur(8px)',
-            display: 'grid',
-            placeItems: 'center',
-            padding: '16px',
-            overflowY: 'auto'
-          }}
-          onClick={() => setShowSuccessModal(false)}
-        >
-          {/* PRINT-SPECIFIC CSS RULES */}
-          <style dangerouslySetInnerHTML={{ __html: `
-            @media print {
-              body * {
-                visibility: hidden !important;
-              }
-              #official-receipt-print-area, #official-receipt-print-area * {
-                visibility: visible !important;
-              }
-              #official-receipt-print-area {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                margin: 0 !important;
-                padding: 20px !important;
-                box-shadow: none !important;
-                border: 1px solid #cbd5e1 !important;
-                background: #ffffff !important;
-              }
-              .receipt-no-print {
-                display: none !important;
-              }
-            }
-          ` }} />
+      {showSuccessModal && (() => {
+        const cleanAmountDynamic = receiptData?.amount || candidate?.amount || amount || '15000';
+        const dynamicAmountWords = receiptData?.amount_words || (cleanAmountDynamic && Number(cleanAmountDynamic) > 0 ? numberToWordsINR(cleanAmountDynamic) : 'Fifteen Thousand Rupees Only');
+        const dynamicUtr = receiptData?.utr_number || candidate?.utr_number || utrNumber || 'PAID';
+        const dynamicReceiptNo = candidate?.receipt_number || receiptData?.receipt_number || 'REC-VERIFIED';
 
+        return (
           <div
+            className="receipt-modal-backdrop"
             style={{
-              background: '#ffffff',
-              borderRadius: '20px',
-              maxWidth: '680px',
-              width: '100%',
-              padding: '0',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
-              border: '1px solid #e2e8f0',
-              position: 'relative',
-              overflow: 'hidden',
-              animation: 'scaleUp 0.25s ease-out',
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              background: 'rgba(15, 23, 42, 0.8)',
+              backdropFilter: 'blur(8px)',
+              display: 'grid',
+              placeItems: 'center',
+              padding: '16px',
+              overflowY: 'auto'
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setShowSuccessModal(false)}
           >
-            {/* MODAL ACTION HEADER BAR */}
-            <div className="receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>📄</span>
-                <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>
-                  Official Course Fee Receipt
-                </span>
-                <span style={{ background: '#16a34a', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase' }}>
-                  Saved in Database
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  style={{
-                    background: '#16a34a',
-                    border: 0,
-                    color: '#fff',
-                    padding: '6px 14px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  🖨️ Print / Save PDF
-                </button>
-                <button
-                  type="button"
+            {/* PRINT-SPECIFIC CSS RULES */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                html, body {
+                  background: #ffffff !important;
+                  color: #0f172a !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                }
+                body > * {
+                  visibility: hidden !important;
+                }
+                .receipt-modal-backdrop {
+                  position: static !important;
+                  background: transparent !important;
+                  inset: auto !important;
+                  overflow: visible !important;
+                  display: block !important;
+                  padding: 0 !important;
+                  visibility: visible !important;
+                }
+                .receipt-card-wrapper {
+                  box-shadow: none !important;
+                  border: none !important;
+                  max-width: 100% !important;
+                  width: 100% !important;
+                  visibility: visible !important;
+                  overflow: visible !important;
+                }
+                #official-receipt-print-area, #official-receipt-print-area * {
+                  visibility: visible !important;
+                }
+                .receipt-no-print {
+                  display: none !important;
+                }
+              }
+            ` }} />
+
+            <div
+              className="receipt-card-wrapper"
+              style={{
+                background: '#ffffff',
+                borderRadius: '20px',
+                maxWidth: '680px',
+                width: '100%',
+                padding: '0',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                border: '1px solid #e2e8f0',
+                position: 'relative',
+                overflow: 'hidden',
+                animation: 'scaleUp 0.25s ease-out',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* MODAL ACTION HEADER BAR */}
+              <div className="receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>📄</span>
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>
+                    Official Course Fee Receipt
+                  </span>
+                  <span style={{ background: '#16a34a', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase' }}>
+                    Saved in Database
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => printReceiptElement('official-receipt-print-area', `Soft-Tech-Receipt-${candidate.candidate_id}`)}
+                    style={{
+                      background: '#16a34a',
+                      border: 0,
+                      color: '#fff',
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    🖨️ Print / Save PDF
+                  </button>
+                  <button
+                    type="button"
                   onClick={() => setShowSuccessModal(false)}
                   aria-label="Close Modal"
                   style={{
@@ -1354,10 +1454,10 @@ function PaymentContent() {
                       </div>
                     </td>
                     <td style={{ padding: '10px', verticalAlign: 'top', fontFamily: 'monospace', fontWeight: 700, color: '#16a34a' }}>
-                      {candidate.utr_number || utrNumber || 'SBI-UPI-VERIFIED'}
+                      {dynamicUtr}
                     </td>
                     <td style={{ padding: '10px', verticalAlign: 'top', textAlign: 'right', fontWeight: 800, fontSize: '13px' }}>
-                      ₹{Number(candidate.amount || amount || 15000).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{Number(cleanAmountDynamic).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                   <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
@@ -1365,7 +1465,7 @@ function PaymentContent() {
                       Total Amount Received:
                     </td>
                     <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontSize: '15px' }}>
-                      ₹{Number(candidate.amount || amount || 15000).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{Number(cleanAmountDynamic).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tbody>
@@ -1376,7 +1476,7 @@ function PaymentContent() {
                 <div style={{ maxWidth: '380px' }}>
                   <span style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Amount in Words:</span>
                   <strong style={{ fontSize: '12px', color: '#0f172a', fontStyle: 'italic' }}>
-                    {receiptData?.amount_words || numberToWordsINR(candidate.amount || amount || 15000)}
+                    {dynamicAmountWords}
                   </strong>
                   <div style={{ marginTop: '6px', fontSize: '10.5px', color: '#64748b' }}>
                     Payment Status: <strong style={{ color: '#16a34a' }}>✓ VERIFIED &amp; LOGGED IN DATABASE</strong>
@@ -1400,7 +1500,7 @@ function PaymentContent() {
                     FEES PAID &amp; CONFIRMED
                   </div>
                   <div style={{ fontSize: '9px', color: '#15803d', marginTop: '2px' }}>
-                    AUTH CODE: {candidate.candidate_id?.replace(/\s+/g, '')}-{(candidate.receipt_number || 'VERIFIED').slice(-4)}
+                    AUTH CODE: {candidate.candidate_id?.replace(/\s+/g, '')}-{(dynamicReceiptNo || 'VERIFIED').slice(-4)}
                   </div>
                 </div>
               </div>
@@ -1423,7 +1523,7 @@ function PaymentContent() {
             {/* MODAL FOOTER BUTTONS (HIDDEN IN PRINT) */}
             <div className="receipt-no-print" style={{ background: '#f8fafc', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
               <a
-                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir,\nHere is my official fee payment confirmation receipt:\nReceipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'REC-VERIFIED'}\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nAmount Paid: ₹${candidate.amount || amount}\nBank UTR: ${candidate.utr_number || utrNumber}\nCourse: ${candidate.course}\nPlease confirm my training onboarding schedule.`)}`}
+                href={`https://wa.me/919117696512?text=${encodeURIComponent(studentWaText)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -1440,13 +1540,13 @@ function PaymentContent() {
                   boxShadow: '0 2px 8px rgba(22,163,74,0.25)'
                 }}
               >
-                <span>💬 WhatsApp Receipt to Mentors</span>
+                <span>💬 WhatsApp Receipt (to 9117696512)</span>
               </a>
 
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => printReceiptElement('official-receipt-print-area', `Soft-Tech-Receipt-${candidate.candidate_id}`)}
                   style={{
                     background: '#0f172a',
                     color: '#fff',
@@ -1455,7 +1555,10 @@ function PaymentContent() {
                     borderRadius: '8px',
                     fontSize: '12px',
                     fontWeight: 700,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                 >
                   🖨️ Print Receipt
@@ -1481,7 +1584,8 @@ function PaymentContent() {
 
           </div>
         </div>
-      )}
+      );
+    })()}
     </main>
   );
 }

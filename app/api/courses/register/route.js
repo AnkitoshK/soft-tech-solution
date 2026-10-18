@@ -103,7 +103,7 @@ export async function POST(request) {
       );
     }
 
-    const amount = safe(body.amount, 50) || '15000';
+    const amount = safe(body.amount, 50) || '';
 
     const saved = await createCourseRegistration({
       name,
