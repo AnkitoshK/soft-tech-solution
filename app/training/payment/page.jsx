@@ -6,8 +6,10 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 
 function numberToWordsINR(amount) {
-  const n = parseInt(amount, 10);
-  if (isNaN(n) || n === 0) return 'Zero Rupees Only';
+  if (!amount) return 'Zero Rupees Only';
+  const cleanStr = String(amount).replace(/[^\d]/g, '');
+  const n = parseInt(cleanStr, 10);
+  if (isNaN(n) || n <= 0) return 'Zero Rupees Only';
   const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
   const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
   
@@ -122,7 +124,8 @@ function PaymentContent() {
   const [copiedIfsc, setCopiedIfsc] = useState(false);
 
   // Payment Confirmation, Amount & Official Receipt State
-  const [amount, setAmount] = useState('15000');
+  // Point 1: Amount MUST be blank ('') by default
+  const [amount, setAmount] = useState('');
   const [utrNumber, setUtrNumber] = useState('');
   const [formError, setFormError] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -142,10 +145,30 @@ function PaymentContent() {
   const accountNumber = process.env.NEXT_PUBLIC_BANK_ACCOUNT || '39797312414';
   const ifscCode = process.env.NEXT_PUBLIC_BANK_IFSC || 'SBIN0003002';
 
-  // Construct official UPI payment URI with dynamic amount
+  // Construct official UPI payment URI with dynamic amount (omit &am= if blank so user can enter any amount in UPI app)
   const candIdDisplay = candidate?.candidate_id || idParam || 'candidate';
-  const cleanAmountNum = amount && !isNaN(Number(amount)) && Number(amount) > 0 ? Number(amount).toString() : '15000';
-  const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&tn=${encodeURIComponent(`Course Enrollment ${candIdDisplay}`)}&am=${encodeURIComponent(cleanAmountNum)}&cu=INR`;
+  const cleanAmountNum = amount && !isNaN(Number(amount)) && Number(amount) > 0 ? Number(amount).toString() : '';
+  const upiUri = cleanAmountNum
+    ? `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&tn=${encodeURIComponent(`Course Enrollment ${candIdDisplay}`)}&am=${encodeURIComponent(cleanAmountNum)}&cu=INR`
+    : `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&tn=${encodeURIComponent(`Course Enrollment ${candIdDisplay}`)}&cu=INR`;
+
+  // Point 2: Session persistence to hold verified UTR state across reloads
+  useEffect(() => {
+    if (typeof window === 'undefined' || !idParam) return;
+    try {
+      const storageKey = `sts_payment_${idParam}`;
+      const saved = sessionStorage.getItem(storageKey) || localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.amount) setAmount(String(parsed.amount));
+        if (parsed.utrNumber) setUtrNumber(String(parsed.utrNumber));
+        if (parsed.receiptData) setReceiptData(parsed.receiptData);
+        if (parsed.paymentConfirmed) setPaymentConfirmed(true);
+      }
+    } catch (e) {
+      console.warn('Could not read session storage', e);
+    }
+  }, [idParam]);
 
   // Fetch candidate registration info
   const fetchCandidate = useCallback(async () => {
@@ -173,12 +196,15 @@ function PaymentContent() {
         try {
           const parsed = typeof data.receipt_data === 'string' ? JSON.parse(data.receipt_data) : data.receipt_data;
           setReceiptData(parsed);
+          if (parsed.amount && !data.amount) {
+            setAmount(String(parsed.amount));
+          }
         } catch (e) {
           console.warn('Failed to parse saved receipt_data', e);
         }
       }
 
-      if (data.payment_status === 'Completed' || data.payment_status === 'Verified' || data.receipt_number) {
+      if (data.payment_status === 'Completed' || data.payment_status === 'Verified' || data.receipt_number || data.utr_number) {
         setPaymentConfirmed(true);
       }
 
@@ -321,11 +347,11 @@ function PaymentContent() {
     if (e && e.preventDefault) e.preventDefault();
     if (!candidate) return;
 
-    const cleanAmount = (amount || '').toString().trim() || '15000';
+    const cleanAmount = (amount || '').toString().trim();
     const cleanUtr = utrNumber.trim();
 
     if (!cleanAmount || isNaN(Number(cleanAmount)) || Number(cleanAmount) <= 0) {
-      setFormError('Please enter a valid payment amount (e.g. 15000).');
+      setFormError('Please enter the payment amount (₹) you paid (e.g. 5000, 10000, 15000).');
       return;
     }
     if (!cleanUtr || cleanUtr.length < 6) {
@@ -398,6 +424,27 @@ function PaymentContent() {
           paid_at: paidAtIso,
           payment_status: 'Verified',
         }));
+
+        // Point 2: Persist in sessionStorage & localStorage so reloading retains confirmed state
+        try {
+          const sessionPayload = {
+            amount: cleanAmount,
+            utrNumber: cleanUtr,
+            receiptData: receiptObj,
+            paymentConfirmed: true,
+            candidateId: candidate.candidate_id,
+          };
+          if (idParam) {
+            sessionStorage.setItem(`sts_payment_${idParam}`, JSON.stringify(sessionPayload));
+            localStorage.setItem(`sts_payment_${idParam}`, JSON.stringify(sessionPayload));
+          }
+          if (candidate.candidate_id) {
+            sessionStorage.setItem(`sts_payment_${candidate.candidate_id}`, JSON.stringify(sessionPayload));
+            localStorage.setItem(`sts_payment_${candidate.candidate_id}`, JSON.stringify(sessionPayload));
+          }
+        } catch (e) {
+          console.warn('Storage save error', e);
+        }
       }
     } catch (err) {
       console.warn('Payment confirmation error:', err);
@@ -947,7 +994,7 @@ function PaymentContent() {
                       <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: '#64748b', fontSize: '15px' }}>₹</span>
                       <input
                         type="number"
-                        placeholder="Enter fee amount (e.g. 15000)"
+                        placeholder="Enter fee amount (e.g. 5000 or 15000)"
                         value={amount}
                         onChange={(e) => {
                           setAmount(e.target.value);
@@ -1068,11 +1115,11 @@ function PaymentContent() {
                   <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px 16px', border: '1px solid #bbf7d0', marginBottom: '16px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span style={{ color: '#64748b' }}>Amount Paid:</span>
-                      <strong style={{ color: '#16a34a', fontSize: '15px' }}>₹{Number(candidate?.amount || amount || 15000).toLocaleString('en-IN')}</strong>
+                      <strong style={{ color: '#16a34a', fontSize: '15px' }}>₹{Number(candidate?.amount || receiptData?.amount || amount || 0).toLocaleString('en-IN')}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span style={{ color: '#64748b' }}>Bank UTR:</span>
-                      <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{candidate?.utr_number || utrNumber}</strong>
+                      <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{candidate?.utr_number || receiptData?.utr_number || utrNumber}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: '#64748b' }}>Official Receipt No:</span>
@@ -1198,7 +1245,7 @@ function PaymentContent() {
               </p>
 
               <a
-                href={`https://wa.me/919117696512?text=${encodeURIComponent(`Hello Sir,\nHere is my course enrollment and payment details:\n\n🎓 Candidate ID: ${candidate.candidate_id}\n👤 Candidate Name: ${candidate.name}\n👨‍👦 Father's Name: ${candidate.father_name || 'N/A'}\n📞 Contact: +91 ${candidate.contact_number}\n✉️ Email: ${candidate.email}\n📚 Course: ${candidate.course}\n💰 Amount: ₹${candidate.amount || amount}\n🔢 Bank UTR: ${candidate.utr_number || utrNumber || 'PAID'}\n📄 Receipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'PENDING'}\n\nPlease confirm my training onboarding schedule. Thank you!`)}`}
+                href={`https://wa.me/919117696512?text=${encodeURIComponent(`Hello Sir,\nHere is my course enrollment and payment details:\n\n🧾 Receipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'PENDING'}\n👤 Candidate ID: ${candidate.candidate_id}\n👤 Candidate Name: ${candidate.name}\n👨‍👦 Father's Name: ${candidate.father_name || 'N/A'}\n📞 Contact: +91 ${candidate.contact_number}\n✉️ Email: ${candidate.email}\n🪪 Govt ID: ${candidate.id_type} - ${candidate.id_number}\n📚 Course: ${candidate.course}\n💰 Amount Paid: ₹${Number(candidate.amount || receiptData?.amount || amount || 0).toLocaleString('en-IN')}${(candidate.amount || receiptData?.amount || amount) && Number(candidate.amount || receiptData?.amount || amount) > 0 ? ` (${numberToWordsINR(candidate.amount || receiptData?.amount || amount)})` : ''}\n🏦 Bank UTR: ${candidate.utr_number || receiptData?.utr_number || utrNumber || 'PENDING'}\n💳 Mode: UPI / SBI Bank Transfer\n📅 Date: ${new Date(candidate.paid_at || receiptData?.paid_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}\n✅ Payment Status: ${candidate.payment_status || 'Verified'}\n\nPlease confirm my training onboarding schedule. Thank you!`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -1230,10 +1277,14 @@ function PaymentContent() {
           OFFICIAL FEE PAYMENT RECEIPT & ADMISSION CONFIRMATION MODAL
           ============================================================ */}
       {showSuccessModal && (() => {
-        const cleanAmountDynamic = receiptData?.amount || candidate?.amount || amount || '15000';
-        const dynamicAmountWords = receiptData?.amount_words || (cleanAmountDynamic && Number(cleanAmountDynamic) > 0 ? numberToWordsINR(cleanAmountDynamic) : 'Fifteen Thousand Rupees Only');
+        const cleanAmountDynamic = receiptData?.amount || candidate?.amount || amount || '0';
+        const dynamicAmountWords = (cleanAmountDynamic && Number(cleanAmountDynamic) > 0)
+          ? numberToWordsINR(cleanAmountDynamic)
+          : (receiptData?.amount_words || 'Zero Rupees Only');
         const dynamicUtr = receiptData?.utr_number || candidate?.utr_number || utrNumber || 'PAID';
-        const dynamicReceiptNo = candidate?.receipt_number || receiptData?.receipt_number || 'REC-VERIFIED';
+        const dynamicReceiptNo = candidate?.receipt_number || receiptData?.receipt_number || `REC-${new Date().getFullYear()}-${(candidate.candidate_id || 'CAND').replace(/\s+/g, '').toUpperCase()}-VERIFIED`;
+
+        const studentWaText = `Hello Sir,\nHere is the official course fee payment receipt details:\n\n🧾 Receipt No: ${dynamicReceiptNo}\n👤 Candidate ID: ${candidate.candidate_id}\n👤 Candidate Name: ${candidate.name}\n👨‍👦 Father's Name: ${candidate.father_name || 'N/A'}\n📞 Contact: +91 ${candidate.contact_number}\n✉️ Email: ${candidate.email}\n🪪 Govt ID: ${candidate.id_type} - ${candidate.id_number}\n📚 Course: ${candidate.course}\n💰 Amount Paid: ₹${Number(cleanAmountDynamic).toLocaleString('en-IN')} (${dynamicAmountWords})\n🏦 Bank UTR: ${dynamicUtr}\n💳 Mode: UPI / SBI Bank Transfer\n📅 Date: ${new Date(candidate.paid_at || receiptData?.paid_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}\n✅ Payment Status: Verified\n\nPlease verify admission record. Thank you!`;
 
         return (
           <div

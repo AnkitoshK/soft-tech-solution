@@ -317,6 +317,37 @@ export default function AdminDashboardPage() {
       const statusToSet = candidateStatusValue || (cleanUtr ? 'Verified' : 'Pending');
       const nowIso = new Date().toISOString();
 
+      const candObj = courses.find(c => c.id === id) || selectedCandidate || {};
+      const candIdClean = (candObj.candidate_id || 'CAND').replace(/\s+/g, '').toUpperCase();
+      const receiptNum = candObj.receipt_number || `REC-${new Date().getFullYear()}-${candIdClean}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const updatedReceiptObj = {
+        receipt_number: receiptNum,
+        candidate_id: candObj.candidate_id,
+        candidate_name: candObj.name,
+        father_name: candObj.father_name,
+        contact_number: candObj.contact_number,
+        email: candObj.email,
+        id_type: candObj.id_type,
+        id_number: candObj.id_number,
+        course_name: candObj.course,
+        amount: cleanAmt,
+        amount_words: cleanAmt && Number(cleanAmt) > 0 ? numberToWordsINR(cleanAmt) : 'Zero Rupees Only',
+        utr_number: cleanUtr,
+        payment_mode: 'UPI / SBI Bank QR (Net Banking)',
+        bank_name: 'State Bank of India (SBI)',
+        account_number: '39797312414',
+        ifsc_code: 'SBIN0003002',
+        payee_name: 'Aashutosh Kumar',
+        upi_id: '9142491242@ibl',
+        payment_status: statusToSet,
+        paid_at: candObj.paid_at || (cleanUtr ? nowIso : null),
+        company_name: 'Soft Tech Solution',
+        company_address: 'Gola Road, Danapur, Patna, Bihar - 801503',
+        support_phone: '+91 9142491242',
+        support_email: 'support@softtechsolution.in',
+      };
+
       const res = await fetch(`/api/courses?id=${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
@@ -324,6 +355,8 @@ export default function AdminDashboardPage() {
           amount: cleanAmt, 
           utr_number: cleanUtr,
           payment_status: statusToSet,
+          receipt_number: receiptNum,
+          receipt_data: JSON.stringify(updatedReceiptObj),
           paid_at: cleanUtr ? nowIso : undefined
         }),
       });
@@ -334,6 +367,8 @@ export default function AdminDashboardPage() {
           amount: cleanAmt, 
           utr_number: cleanUtr, 
           payment_status: statusToSet,
+          receipt_number: receiptNum,
+          receipt_data: JSON.stringify(updatedReceiptObj),
           paid_at: cleanUtr && !c.paid_at ? nowIso : c.paid_at
         } : c)));
 
@@ -343,6 +378,8 @@ export default function AdminDashboardPage() {
             amount: cleanAmt, 
             utr_number: cleanUtr, 
             payment_status: statusToSet,
+            receipt_number: receiptNum,
+            receipt_data: JSON.stringify(updatedReceiptObj),
             paid_at: cleanUtr && !prev.paid_at ? nowIso : prev.paid_at
           }));
         }
@@ -2192,63 +2229,89 @@ export default function AdminDashboardPage() {
 
                             {/* AMOUNT (₹) */}
                             <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
-                              {cand.amount ? (
-                                <div>
-                                  <strong style={{ color: cand.utr_number || cand.payment_status === 'Verified' || cand.payment_status === 'Completed' ? '#16a34a' : '#d97706', fontSize: '13.5px', display: 'block' }}>
-                                    ₹{Number(cand.amount).toLocaleString('en-IN')}
-                                  </strong>
-                                  {cand.paid_at ? (
-                                    <small style={{ display: 'block', fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
-                                      🕒 {new Date(cand.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </small>
-                                  ) : (
-                                    <small style={{ display: 'block', fontSize: '10px', color: cand.utr_number ? '#15803d' : '#d97706' }}>
-                                      {cand.utr_number ? 'Paid via UTR' : 'Amount Selected'}
-                                    </small>
-                                  )}
-                                </div>
-                              ) : (
-                                <div>
-                                  <span style={{ color: '#94a3b8', fontSize: '13px' }}>—</span>
-                                  <small style={{ display: 'block', fontSize: '10px', color: '#94a3b8' }}>Unpaid</small>
-                                </div>
-                              )}
+                              {(() => {
+                                const rowAmt = cand.amount || (() => {
+                                  if (!cand.receipt_data) return '';
+                                  try {
+                                    const parsed = typeof cand.receipt_data === 'string' ? JSON.parse(cand.receipt_data) : cand.receipt_data;
+                                    return parsed?.amount || '';
+                                  } catch { return ''; }
+                                })();
+                                return rowAmt && Number(rowAmt) > 0 ? (
+                                  <div>
+                                    <strong style={{ color: cand.utr_number || cand.payment_status === 'Verified' || cand.payment_status === 'Completed' ? '#16a34a' : '#d97706', fontSize: '13.5px', display: 'block' }}>
+                                      ₹{Number(rowAmt).toLocaleString('en-IN')}
+                                    </strong>
+                                    {cand.paid_at ? (
+                                      <small style={{ display: 'block', fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                                        🕒 {new Date(cand.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                      </small>
+                                    ) : (
+                                      <small style={{ display: 'block', fontSize: '10px', color: cand.utr_number ? '#15803d' : '#d97706' }}>
+                                        {cand.utr_number ? 'Paid via UTR' : 'Amount Selected'}
+                                      </small>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <span style={{ color: '#94a3b8', fontSize: '13px' }}>—</span>
+                                    <small style={{ display: 'block', fontSize: '10px', color: '#94a3b8' }}>Unpaid</small>
+                                  </div>
+                                );
+                              })()}
                             </td>
 
                             {/* UTR & RECEIPT */}
                             <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
-                              {cand.utr_number ? (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '12px' }}>
-                                      {cand.utr_number}
-                                    </strong>
-                                    <button
-                                      type="button"
-                                      onClick={() => copyToClipboard(cand.utr_number, `utr-${cand.id}`)}
-                                      title="Copy UTR Number"
-                                      style={{
-                                        border: '1px solid #cbd5e1',
-                                        background: copiedId === `utr-${cand.id}` ? '#16a34a' : '#fff',
-                                        color: copiedId === `utr-${cand.id}` ? '#fff' : '#475569',
-                                        padding: '1px 5px',
-                                        borderRadius: '3px',
-                                        cursor: 'pointer',
-                                        fontSize: '10px',
-                                      }}
-                                    >
-                                      {copiedId === `utr-${cand.id}` ? '✓' : '📋'}
-                                    </button>
+                              {(() => {
+                                const rowUtr = cand.utr_number || (() => {
+                                  if (!cand.receipt_data) return '';
+                                  try {
+                                    const parsed = typeof cand.receipt_data === 'string' ? JSON.parse(cand.receipt_data) : cand.receipt_data;
+                                    return parsed?.utr_number || '';
+                                  } catch { return ''; }
+                                })();
+                                const rowReceipt = cand.receipt_number || (() => {
+                                  if (!cand.receipt_data) return '';
+                                  try {
+                                    const parsed = typeof cand.receipt_data === 'string' ? JSON.parse(cand.receipt_data) : cand.receipt_data;
+                                    return parsed?.receipt_number || '';
+                                  } catch { return ''; }
+                                })();
+
+                                return rowUtr ? (
+                                  <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '12px' }}>
+                                        {rowUtr}
+                                      </strong>
+                                      <button
+                                        type="button"
+                                        onClick={() => copyToClipboard(rowUtr, `utr-${cand.id}`)}
+                                        title="Copy UTR Number"
+                                        style={{
+                                          border: '1px solid #cbd5e1',
+                                          background: copiedId === `utr-${cand.id}` ? '#16a34a' : '#fff',
+                                          color: copiedId === `utr-${cand.id}` ? '#fff' : '#475569',
+                                          padding: '1px 5px',
+                                          borderRadius: '3px',
+                                          cursor: 'pointer',
+                                          fontSize: '10px',
+                                        }}
+                                      >
+                                        {copiedId === `utr-${cand.id}` ? '✓' : '📋'}
+                                      </button>
+                                    </div>
+                                    {rowReceipt && (
+                                      <span style={{ display: 'inline-block', fontSize: '10px', fontFamily: 'monospace', color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', padding: '1px 5px', borderRadius: '4px', marginTop: '3px' }}>
+                                        {rowReceipt}
+                                      </span>
+                                    )}
                                   </div>
-                                  {cand.receipt_number && (
-                                    <span style={{ display: 'inline-block', fontSize: '10px', fontFamily: 'monospace', color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', padding: '1px 5px', borderRadius: '4px', marginTop: '3px' }}>
-                                      {cand.receipt_number}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span style={{ color: '#94a3b8', fontSize: '12px' }}>—</span>
-                              )}
+                                ) : (
+                                  <span style={{ color: '#94a3b8', fontSize: '12px' }}>—</span>
+                                );
+                              })()}
                             </td>
 
                             {/* QR CODE SCAN & GEOLOCATION */}
@@ -2359,10 +2422,22 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    const parsedAmt = cand.amount || (() => {
+                                      if (!cand.receipt_data) return '';
+                                      try {
+                                        return (typeof cand.receipt_data === 'string' ? JSON.parse(cand.receipt_data) : cand.receipt_data)?.amount || '';
+                                      } catch { return ''; }
+                                    })();
+                                    const parsedUtr = cand.utr_number || (() => {
+                                      if (!cand.receipt_data) return '';
+                                      try {
+                                        return (typeof cand.receipt_data === 'string' ? JSON.parse(cand.receipt_data) : cand.receipt_data)?.utr_number || '';
+                                      } catch { return ''; }
+                                    })();
                                     setSelectedCandidate(cand);
                                     setCandidateNotesValue(cand.notes || '');
-                                    setCandidateAmountValue(cand.amount || '');
-                                    setCandidateUtrValue(cand.utr_number || '');
+                                    setCandidateAmountValue(parsedAmt);
+                                    setCandidateUtrValue(parsedUtr);
                                     setCandidateStatusValue(cand.payment_status || 'Pending');
                                   }}
                                   className="button outline"
@@ -2757,11 +2832,13 @@ export default function AdminDashboardPage() {
           }
         })();
         const dynamicAmount = parsedReceipt?.amount || adminReceiptCandidate.amount || '';
-        const dynamicAmountWords = parsedReceipt?.amount_words || (dynamicAmount && Number(dynamicAmount) > 0 ? numberToWordsINR(dynamicAmount) : 'Pending Payment');
+        const dynamicAmountWords = (dynamicAmount && Number(dynamicAmount) > 0)
+          ? numberToWordsINR(dynamicAmount)
+          : (parsedReceipt?.amount_words || 'Zero Rupees Only');
         const dynamicUtr = parsedReceipt?.utr_number || adminReceiptCandidate.utr_number || 'PENDING-UTR';
         const dynamicReceiptNo = parsedReceipt?.receipt_number || adminReceiptCandidate.receipt_number || `REC-2026-${adminReceiptCandidate.candidate_id?.replace(/\s+/g, '') || 'CAND'}-VERIFIED`;
 
-        const waMessageText = `Hello Sir,\nHere is the official course fee payment receipt details:\n\n📄 Receipt No: ${dynamicReceiptNo}\n🎓 Candidate ID: ${adminReceiptCandidate.candidate_id}\n👤 Candidate Name: ${adminReceiptCandidate.name}\n👨‍👦 Father's Name: ${adminReceiptCandidate.father_name || 'N/A'}\n📞 Contact: +91 ${adminReceiptCandidate.contact_number}\n✉️ Email: ${adminReceiptCandidate.email}\n🆔 Govt ID: ${adminReceiptCandidate.id_type} - ${adminReceiptCandidate.id_number}\n📚 Course: ${adminReceiptCandidate.course}\n💰 Amount Paid: ${dynamicAmount ? `₹${Number(dynamicAmount).toLocaleString('en-IN')} (${dynamicAmountWords})` : 'Pending'}\n🔢 Bank UTR: ${dynamicUtr}\n🏦 Mode: UPI / SBI Bank Transfer\n📅 Date: ${new Date(adminReceiptCandidate.paid_at || adminReceiptCandidate.created_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}\n✅ Payment Status: ${adminReceiptCandidate.payment_status || 'Verified'}\n\nPlease verify admission record. Thank you!`;
+        const waMessageText = `Hello Sir,\nHere is the official course fee payment receipt details:\n\n🧾 Receipt No: ${dynamicReceiptNo}\n👤 Candidate ID: ${adminReceiptCandidate.candidate_id}\n👤 Candidate Name: ${adminReceiptCandidate.name}\n👨‍👦 Father's Name: ${adminReceiptCandidate.father_name || 'N/A'}\n📞 Contact: +91 ${adminReceiptCandidate.contact_number}\n✉️ Email: ${adminReceiptCandidate.email}\n🪪 Govt ID: ${adminReceiptCandidate.id_type} - ${adminReceiptCandidate.id_number}\n📚 Course: ${adminReceiptCandidate.course}\n💰 Amount Paid: ₹${Number(dynamicAmount || 0).toLocaleString('en-IN')} (${dynamicAmountWords})\n🏦 Bank UTR: ${dynamicUtr}\n💳 Mode: UPI / SBI Bank Transfer\n📅 Date: ${new Date(adminReceiptCandidate.paid_at || adminReceiptCandidate.created_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}\n✅ Payment Status: ${adminReceiptCandidate.payment_status || 'Verified'}\n\nPlease verify admission record. Thank you!`;
 
         return (
           <div className="receipt-modal-backdrop" style={{
