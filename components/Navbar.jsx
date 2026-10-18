@@ -77,6 +77,13 @@ export default function Navbar() {
               Services
             </Link>
             <Link 
+              href="/training" 
+              className={pathname === '/training' || pathname?.startsWith('/training/') ? 'active' : ''} 
+              onClick={closeMenu}
+            >
+              Training &amp; Course
+            </Link>
+            <Link 
               href="/#process" 
               onClick={closeMenu}
             >

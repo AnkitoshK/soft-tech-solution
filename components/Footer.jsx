@@ -118,6 +118,7 @@ export default function Footer() {
               <li><Link href="/#process">Our Process</Link></li>
               <li><Link href="/portfolio">Our Work (Portfolio)</Link></li>
               <li><Link href="/about">About Us &amp; Leadership</Link></li>
+              <li><Link href="/training">Training &amp; Course</Link></li>
               <li><Link href="/contact">Contact Us</Link></li>
             </ul>
             <div style={{ marginTop: '20px' }}>

@@ -48,6 +48,16 @@ export default function AdminDashboardPage() {
   const [isDeletingBatch, setIsDeletingBatch] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
 
+  // Training & Course Registrations State
+  const [courses, setCourses] = useState([]);
+  const [courseLoading, setCourseLoading] = useState(false);
+  const [courseStatusFilter, setCourseStatusFilter] = useState('All');
+  const [courseSearchQuery, setCourseSearchQuery] = useState('');
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [updatingCandidateId, setUpdatingCandidateId] = useState(null);
+  const [candidateNotesValue, setCandidateNotesValue] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
+
   const copyToClipboard = (text, id) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text);
@@ -70,7 +80,7 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         setDbInfo(data);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   const loadLeads = useCallback(async (status = 'All') => {
@@ -119,6 +129,138 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  const loadCourses = useCallback(async (status = 'All') => {
+    setCourseLoading(true);
+    try {
+      const url = `/api/courses${status !== 'All' ? `?status=${encodeURIComponent(status)}` : ''}`;
+      const res = await fetch(url, {
+        headers: getAuthHeaders(),
+        cache: 'no-store',
+      });
+      if (res.status === 401) {
+        setAuthenticated(false);
+        localStorage.removeItem('sts_admin_token');
+        router.replace('/admin/login');
+        return;
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server returned error ${res.status}`);
+      }
+      const data = await res.json();
+      setCourses(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showToast('Could not load course registrations: ' + err.message, 'error');
+    } finally {
+      setCourseLoading(false);
+    }
+  }, [router, showToast]);
+
+  const handleCourseStatusChange = async (id, newStatus) => {
+    setUpdatingCandidateId(id);
+    try {
+      const res = await fetch(`/api/courses?id=${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ payment_status: newStatus }),
+      });
+      if (res.ok) {
+        setCourses(prev => prev.map(c => (c.id === id ? { ...c, payment_status: newStatus } : c)));
+        if (selectedCandidate && selectedCandidate.id === id) {
+          setSelectedCandidate(prev => ({ ...prev, payment_status: newStatus }));
+        }
+        showToast(`Candidate status updated to ${newStatus}`, 'success');
+      } else {
+        throw new Error('Update failed');
+      }
+    } catch (err) {
+      showToast('Could not update candidate status: ' + err.message, 'error');
+    } finally {
+      setUpdatingCandidateId(null);
+    }
+  };
+
+  const handleSaveCourseNotes = async (id) => {
+    setSavingNotes(true);
+    try {
+      const res = await fetch(`/api/courses?id=${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ notes: candidateNotesValue }),
+      });
+      if (res.ok) {
+        setCourses(prev => prev.map(c => (c.id === id ? { ...c, notes: candidateNotesValue } : c)));
+        if (selectedCandidate && selectedCandidate.id === id) {
+          setSelectedCandidate(prev => ({ ...prev, notes: candidateNotesValue }));
+        }
+        showToast('Candidate notes saved.', 'success');
+      } else {
+        throw new Error('Save failed');
+      }
+    } catch (err) {
+      showToast('Failed to save notes: ' + err.message, 'error');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const handleDeleteCourse = async (id, candidateId) => {
+    if (!confirm(`Are you sure you want to permanently delete Candidate ${candidateId || id}? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/courses?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        setCourses(prev => prev.filter(c => c.id !== id));
+        if (selectedCandidate && selectedCandidate.id === id) {
+          setSelectedCandidate(null);
+        }
+        showToast(`Candidate ${candidateId || id} deleted.`, 'info');
+      } else {
+        throw new Error('Delete failed');
+      }
+    } catch (err) {
+      showToast('Could not delete candidate: ' + err.message, 'error');
+    }
+  };
+
+  const exportCourseCSV = () => {
+    if (!courses.length) {
+      showToast('No course registrations to export', 'info');
+      return;
+    }
+    const headers = ['Candidate ID', 'Name', "Father's Name", 'Contact Number', 'Email', 'ID Type', 'ID Number', 'Course', 'Scanned', 'Scanned At', 'Latitude', 'Longitude', 'Payment Status', 'Created At', 'Notes'];
+    const rows = courses.map(c => [
+      `"${c.candidate_id || ''}"`,
+      `"${(c.name || '').replace(/"/g, '""')}"`,
+      `"${(c.father_name || '').replace(/"/g, '""')}"`,
+      `"${c.contact_number || ''}"`,
+      `"${c.email || ''}"`,
+      `"${c.id_type || ''}"`,
+      `"${c.id_number || ''}"`,
+      `"${(c.course || '').replace(/"/g, '""')}"`,
+      `"${c.scanned ? 'YES' : 'NO'}"`,
+      `"${c.scanned_at || ''}"`,
+      `"${c.scan_lat ?? ''}"`,
+      `"${c.scan_long ?? ''}"`,
+      `"${c.payment_status || ''}"`,
+      `"${c.created_at || ''}"`,
+      `"${(c.notes || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `soft_tech_course_registrations_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Course registrations exported to CSV', 'success');
+  };
+
   // Check session on mount
   useEffect(() => {
     async function checkAuth() {
@@ -137,6 +279,7 @@ export default function AdminDashboardPage() {
           loadLeads(statusFilter);
           fetchDbStatus();
           loadAdmins();
+          loadCourses(courseStatusFilter);
         } else {
           setAuthenticated(false);
           router.replace('/admin/login');
@@ -149,7 +292,7 @@ export default function AdminDashboardPage() {
       }
     }
     checkAuth();
-  }, [router, statusFilter, loadLeads, fetchDbStatus, loadAdmins]);
+  }, [router, statusFilter, loadLeads, fetchDbStatus, loadAdmins, loadCourses, courseStatusFilter]);
 
   const handleLogout = async () => {
     try {
@@ -279,7 +422,7 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    const isCurrentLoggedIn = currentUser.email && adminUser.email && 
+    const isCurrentLoggedIn = currentUser.email && adminUser.email &&
       currentUser.email.toLowerCase() === adminUser.email.toLowerCase();
 
     const isMaster = adminUser.isMaster || adminUser.id === 'master_admin';
@@ -348,10 +491,10 @@ export default function AdminDashboardPage() {
         setSelectedAdminIds([]);
 
         // If current user's email was among deleted IDs, log out
-        const currentUserDeleted = admins.some(a => 
-          selectedAdminIds.includes(a.id) && 
-          currentUser.email && 
-          a.email && 
+        const currentUserDeleted = admins.some(a =>
+          selectedAdminIds.includes(a.id) &&
+          currentUser.email &&
+          a.email &&
           a.email.toLowerCase() === currentUser.email.toLowerCase()
         );
 
@@ -431,10 +574,10 @@ export default function AdminDashboardPage() {
         <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <img 
-                src="/soft-tech-logo-transparent.png" 
-                alt="SoftTech Solution" 
-                style={{ width: '34px', height: '34px', objectFit: 'contain' }} 
+              <img
+                src="/soft-tech-logo-transparent.png"
+                alt="SoftTech Solution"
+                style={{ width: '34px', height: '34px', objectFit: 'contain' }}
               />
               <div className="brand-lockup">
                 <span className="brand-shared-s" style={{ fontSize: '30px' }}>S</span>
@@ -448,10 +591,10 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', marginLeft: '6px' }}>/ Admin Dashboard</span>
-              
+
               {/* DATABASE STATUS BADGE */}
               {dbInfo && (
-                <span 
+                <span
                   onClick={() => setShowSetupModal(true)}
                   style={{
                     display: 'inline-flex',
@@ -500,16 +643,16 @@ export default function AdminDashboardPage() {
           <div style={{ display: 'flex', gap: '10px' }}>
             {activeTab === 'leads' && (
               <>
-                <button 
-                  onClick={() => loadLeads(statusFilter)} 
+                <button
+                  onClick={() => loadLeads(statusFilter)}
                   className="button outline"
                   style={{ padding: '8px 16px', fontSize: '13px' }}
                   disabled={refreshing}
                 >
                   {refreshing ? 'Refreshing…' : '🔄 Refresh'}
                 </button>
-                <button 
-                  onClick={exportCSV} 
+                <button
+                  onClick={exportCSV}
                   className="button outline"
                   style={{ padding: '8px 16px', fontSize: '13px' }}
                 >
@@ -519,8 +662,8 @@ export default function AdminDashboardPage() {
             )}
 
             {activeTab === 'admins' && (
-              <button 
-                onClick={() => setShowNewAdminModal(true)} 
+              <button
+                onClick={() => setShowNewAdminModal(true)}
                 className="button primary"
                 style={{ padding: '8px 16px', fontSize: '13px' }}
               >
@@ -528,8 +671,28 @@ export default function AdminDashboardPage() {
               </button>
             )}
 
-            <button 
-              onClick={handleLogout} 
+            {activeTab === 'courses' && (
+              <>
+                <button
+                  onClick={() => loadCourses(courseStatusFilter)}
+                  className="button outline"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                  disabled={courseLoading}
+                >
+                  {courseLoading ? 'Refreshing…' : '🔄 Refresh'}
+                </button>
+                <button
+                  onClick={exportCourseCSV}
+                  className="button outline"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                >
+                  📥 Export Candidates CSV
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={handleLogout}
               className="button outline"
               style={{ padding: '8px 16px', fontSize: '13px', color: '#dc2626', borderColor: '#fca5a5' }}
             >
@@ -568,7 +731,7 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setShowSetupModal(true)}
               className="button primary"
               style={{ padding: '9px 18px', fontSize: '12px', whiteSpace: 'nowrap' }}
@@ -614,6 +777,41 @@ export default function AdminDashboardPage() {
               border: `1px solid ${activeTab === 'leads' ? '#fed7aa' : '#e2e8f0'}`,
             }}>
               {totalCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('courses');
+              loadCourses(courseStatusFilter);
+            }}
+            style={{
+              padding: '12px 20px',
+              border: 'none',
+              background: 'none',
+              borderBottom: activeTab === 'courses' ? '3px solid var(--orange)' : '3px solid transparent',
+              color: activeTab === 'courses' ? 'var(--navy)' : '#64748b',
+              fontWeight: 700,
+              fontSize: '15px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>🎓</span> Training &amp; Course
+            <span style={{
+              background: activeTab === 'courses' ? '#fff7ed' : '#f1f5f9',
+              color: activeTab === 'courses' ? 'var(--orange)' : '#64748b',
+              fontSize: '11px',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              border: `1px solid ${activeTab === 'courses' ? '#fed7aa' : '#e2e8f0'}`,
+            }}>
+              {courses.length} Regs · {courses.filter(c => c.scanned).length} Scanned
             </span>
           </button>
 
@@ -683,8 +881,8 @@ export default function AdminDashboardPage() {
 
             {/* SEARCH & FILTERS TOOLBAR */}
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search by name, email, phone, or service..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -750,8 +948,8 @@ export default function AdminDashboardPage() {
                     </thead>
                     <tbody>
                       {filteredLeads.map(lead => (
-                        <tr 
-                          key={lead.id} 
+                        <tr
+                          key={lead.id}
                           style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }}
                           onMouseEnter={e => e.currentTarget.style.background = '#fbfcfe'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -787,11 +985,11 @@ export default function AdminDashboardPage() {
                                 fontWeight: 700,
                                 border: '1px solid #d9dfeb',
                                 background: lead.status === 'New' ? '#fff7ed' :
-                                            lead.status === 'Contacted' ? '#eff6ff' :
-                                            lead.status === 'Converted' ? '#dcfce7' : '#ffffff',
+                                  lead.status === 'Contacted' ? '#eff6ff' :
+                                    lead.status === 'Converted' ? '#dcfce7' : '#ffffff',
                                 color: lead.status === 'New' ? '#c2410c' :
-                                       lead.status === 'Contacted' ? '#1d4ed8' :
-                                       lead.status === 'Converted' ? '#15803d' : '#374151',
+                                  lead.status === 'Contacted' ? '#1d4ed8' :
+                                    lead.status === 'Converted' ? '#15803d' : '#374151',
                                 cursor: 'pointer',
                                 outline: 'none',
                               }}
@@ -1306,7 +1504,7 @@ export default function AdminDashboardPage() {
                     .slice(0, 2);
 
                   return (
-                    <div 
+                    <div
                       key={adm.id}
                       style={{
                         background: '#ffffff',
@@ -1486,7 +1684,694 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* ==============================================================
+            TAB 3: TRAINING & COURSE REGISTRATIONS VIEW
+            ============================================================== */}
+        {activeTab === 'courses' && (
+          <div>
+            {/* HEADER & QUICK STATS */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              flexWrap: 'wrap',
+              gap: '16px',
+              marginBottom: '20px',
+            }}>
+              <div>
+                <h2 style={{ fontSize: '22px', color: 'var(--navy)', margin: 0 }}>
+                  Training &amp; Course Registrations
+                </h2>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
+                  Track student admissions, government ID checks, payment statuses, and GPS scan coordinates in real time.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <a
+                  href="/training"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button outline"
+                  style={{ padding: '8px 14px', fontSize: '12px' }}
+                >
+                  🔗 Open Public Form ↗
+                </a>
+              </div>
+            </div>
+
+            {/* STATS CARDS */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #edf2f7', boxShadow: '0 4px 16px rgba(15,23,42,0.04)' }}>
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Total Registered</span>
+                <b style={{ display: 'block', fontSize: '28px', fontFamily: 'Poppins, sans-serif', color: 'var(--navy)', marginTop: '4px' }}>
+                  {courses.length}
+                </b>
+              </div>
+
+              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #bbf7d0', boxShadow: '0 4px 16px rgba(15,23,42,0.04)' }}>
+                <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600 }}>✅ QR Scanned (With GPS)</span>
+                <b style={{ display: 'block', fontSize: '28px', fontFamily: 'Poppins, sans-serif', color: '#16a34a', marginTop: '4px' }}>
+                  {courses.filter(c => c.scanned).length}
+                </b>
+              </div>
+
+              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #fed7aa', boxShadow: '0 4px 16px rgba(15,23,42,0.04)' }}>
+                <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: 600 }}>⏳ Pending QR Scan</span>
+                <b style={{ display: 'block', fontSize: '28px', fontFamily: 'Poppins, sans-serif', color: 'var(--orange)', marginTop: '4px' }}>
+                  {courses.filter(c => !c.scanned).length}
+                </b>
+              </div>
+
+              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #bfdbfe', boxShadow: '0 4px 16px rgba(15,23,42,0.04)' }}>
+                <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 600 }}>🎯 Enrolled &amp; Verified</span>
+                <b style={{ display: 'block', fontSize: '28px', fontFamily: 'Poppins, sans-serif', color: '#2563eb', marginTop: '4px' }}>
+                  {courses.filter(c => c.payment_status === 'Verified' || c.payment_status === 'Completed').length}
+                </b>
+              </div>
+            </div>
+
+            {/* SEARCH & FILTER CONTROLS */}
+            <div style={{
+              background: '#ffffff',
+              borderRadius: '14px',
+              padding: '16px 20px',
+              border: '1px solid #e2e8f0',
+              marginBottom: '20px',
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+            }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search by Candidate ID (cand 001), name, mobile, email, or Aadhaar/PAN..."
+                  value={courseSearchQuery}
+                  onChange={(e) => setCourseSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px 10px 38px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    outline: 'none',
+                    color: '#0f172a',
+                  }}
+                />
+              </div>
+
+              {/* STATUS FILTER DROPDOWN */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Filter:</span>
+                <select
+                  value={courseStatusFilter}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCourseStatusFilter(val);
+                    loadCourses(val);
+                  }}
+                  style={{
+                    padding: '9px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    color: '#0f172a',
+                    background: '#fff',
+                    outline: 'none',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="All">All Registrations</option>
+                  <option value="Scanned">Scanned Only (GPS Available)</option>
+                  <option value="Not Scanned">Not Scanned Yet</option>
+                  <option value="Pending">Status: Pending</option>
+                  <option value="Verified">Status: Verified</option>
+                  <option value="Completed">Status: Completed</option>
+                  <option value="Cancelled">Status: Cancelled</option>
+                </select>
+              </div>
+
+              {(courseSearchQuery || courseStatusFilter !== 'All') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCourseSearchQuery('');
+                    setCourseStatusFilter('All');
+                    loadCourses('All');
+                  }}
+                  style={{
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    color: '#475569',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕ Reset Filters
+                </button>
+              )}
+            </div>
+
+            {/* CANDIDATES TABLE */}
+            {courseLoading ? (
+              <div style={{ padding: '60px 0', textAlign: 'center', background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #e2e8f0', borderTopColor: 'var(--orange)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                <p style={{ marginTop: '12px', color: '#64748b', fontSize: '13px' }}>Loading registered candidates...</p>
+              </div>
+            ) : (() => {
+              const filteredList = courses.filter(c => {
+                if (courseSearchQuery.trim()) {
+                  const q = courseSearchQuery.toLowerCase().trim();
+                  const matchId = (c.candidate_id || '').toLowerCase().includes(q);
+                  const matchName = (c.name || '').toLowerCase().includes(q);
+                  const matchFather = (c.father_name || '').toLowerCase().includes(q);
+                  const matchPhone = (c.contact_number || '').includes(q);
+                  const matchEmail = (c.email || '').toLowerCase().includes(q);
+                  const matchGov = (c.id_number || '').toLowerCase().includes(q);
+                  const matchCourse = (c.course || '').toLowerCase().includes(q);
+                  if (!matchId && !matchName && !matchFather && !matchPhone && !matchEmail && !matchGov && !matchCourse) {
+                    return false;
+                  }
+                }
+                if (courseStatusFilter !== 'All') {
+                  if (courseStatusFilter === 'Scanned') return c.scanned;
+                  if (courseStatusFilter === 'Not Scanned') return !c.scanned;
+                  if (c.payment_status !== courseStatusFilter) return false;
+                }
+                return true;
+              });
+
+              if (filteredList.length === 0) {
+                return (
+                  <div style={{ background: '#ffffff', borderRadius: '16px', padding: '50px 20px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '40px', display: 'block', marginBottom: '10px' }}>🎓</span>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '18px', color: 'var(--navy)' }}>No Course Registrations Found</h3>
+                    <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: '13px' }}>
+                      {courseSearchQuery || courseStatusFilter !== 'All' 
+                        ? 'No candidates match your current search or status filter.' 
+                        : 'No students have submitted the course registration form yet.'}
+                    </p>
+                    <a
+                      href="/training"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="button primary"
+                      style={{ padding: '8px 18px', fontSize: '13px', display: 'inline-block' }}
+                    >
+                      Fill Test Registration ↗
+                    </a>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 16px rgba(15,23,42,0.03)' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>Candidate ID</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>Candidate Name</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>Contact &amp; Email</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>Govt ID (Aadhaar/PAN)</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>Course</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>QR Scan Status &amp; GPS</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700 }}>Status</th>
+                          <th style={{ padding: '14px 16px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredList.map((cand, idx) => (
+                          <tr 
+                            key={cand.id} 
+                            style={{ 
+                              borderBottom: idx === filteredList.length - 1 ? 'none' : '1px solid #f1f5f9',
+                              transition: 'background 0.15s',
+                              background: cand.scanned ? '#fdfffd' : '#ffffff'
+                            }}
+                          >
+                            {/* CANDIDATE ID */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span 
+                                  style={{ 
+                                    fontFamily: 'monospace', 
+                                    fontWeight: 800, 
+                                    fontSize: '13px', 
+                                    color: '#c2410c', 
+                                    background: '#fff7ed', 
+                                    border: '1px solid #fed7aa', 
+                                    padding: '3px 8px', 
+                                    borderRadius: '6px' 
+                                  }}
+                                >
+                                  {cand.candidate_id || 'N/A'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(cand.candidate_id, cand.id)}
+                                  title="Copy Candidate ID"
+                                  style={{
+                                    border: '1px solid #cbd5e1',
+                                    background: copiedId === cand.id ? '#16a34a' : '#fff',
+                                    color: copiedId === cand.id ? '#fff' : '#475569',
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                  }}
+                                >
+                                  {copiedId === cand.id ? '✓' : '📋'}
+                                </button>
+                              </div>
+                              <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                                Reg: {new Date(cand.created_at).toLocaleDateString()}
+                              </span>
+                            </td>
+
+                            {/* CANDIDATE NAME & FATHER'S NAME */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              <strong style={{ display: 'block', color: 'var(--navy)', fontSize: '14px' }}>
+                                {cand.name}
+                              </strong>
+                              <small style={{ color: '#64748b', fontSize: '11px', display: 'block', marginTop: '2px' }}>
+                                S/O, D/O: <strong>{cand.father_name}</strong>
+                              </small>
+                            </td>
+
+                            {/* CONTACT & EMAIL */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                <a 
+                                  href={`tel:+91${cand.contact_number}`} 
+                                  style={{ color: '#0369a1', fontWeight: 600, textDecoration: 'none' }}
+                                >
+                                  +91 {cand.contact_number}
+                                </a>
+                                <a
+                                  href={`https://wa.me/91${cand.contact_number}?text=${encodeURIComponent(`Hello ${cand.name}, this is Soft Tech Solution regarding your ${cand.course} registration.`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: '#16a34a', textDecoration: 'none', fontSize: '12px' }}
+                                  title="WhatsApp Student"
+                                >
+                                  💬
+                                </a>
+                              </div>
+                              <a 
+                                href={`mailto:${cand.email}`} 
+                                style={{ color: '#64748b', fontSize: '11px', textDecoration: 'none', display: 'block' }}
+                              >
+                                {cand.email}
+                              </a>
+                            </td>
+
+                            {/* GOVT ID */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              <span 
+                                style={{ 
+                                  fontSize: '10px', 
+                                  fontWeight: 800, 
+                                  background: cand.id_type === 'AADHAAR' ? '#eff6ff' : '#fef3c7', 
+                                  color: cand.id_type === 'AADHAAR' ? '#1d4ed8' : '#b45309',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  marginRight: '6px'
+                                }}
+                              >
+                                {cand.id_type}
+                              </span>
+                              <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '12px' }}>
+                                {cand.id_number}
+                              </strong>
+                            </td>
+
+                            {/* COURSE */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              <span style={{ color: '#334155', fontWeight: 600, fontSize: '12px', display: 'block', maxWidth: '200px' }}>
+                                {cand.course}
+                              </span>
+                            </td>
+
+                            {/* QR CODE SCAN & GEOLOCATION */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              {cand.scanned ? (
+                                <div>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#ecfdf5', color: '#15803d', border: '1px solid #86efac', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+                                    <span>✅ Scanned</span>
+                                    {cand.scan_count > 1 && <span>({cand.scan_count}x)</span>}
+                                  </div>
+
+                                  {cand.scanned_at && (
+                                    <small style={{ display: 'block', fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+                                      🕒 {new Date(cand.scanned_at).toLocaleString()}
+                                    </small>
+                                  )}
+
+                                  {cand.scan_lat !== null && cand.scan_long !== null ? (
+                                    <div style={{ marginTop: '5px' }}>
+                                      <div style={{ fontSize: '11px', color: '#0f172a', fontFamily: 'monospace' }}>
+                                        📍 {Number(cand.scan_lat).toFixed(4)}, {Number(cand.scan_long).toFixed(4)}
+                                      </div>
+                                      <a
+                                        href={`https://www.google.com/maps?q=${cand.scan_lat},${cand.scan_long}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '3px',
+                                          marginTop: '3px',
+                                          color: '#0284c7',
+                                          fontSize: '11px',
+                                          fontWeight: 700,
+                                          textDecoration: 'none'
+                                        }}
+                                      >
+                                        <span>View on Maps ↗</span>
+                                      </a>
+                                    </div>
+                                  ) : (
+                                    <small style={{ display: 'block', fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                                      📍 GPS not enabled
+                                    </small>
+                                  )}
+                                </div>
+                              ) : (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+                                  ⏳ Not Scanned
+                                </span>
+                              )}
+                            </td>
+
+                            {/* PAYMENT / ENROLLMENT STATUS DROPDOWN */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top' }}>
+                              <select
+                                value={cand.payment_status}
+                                disabled={updatingCandidateId === cand.id}
+                                onChange={(e) => handleCourseStatusChange(cand.id, e.target.value)}
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  border: '1px solid #cbd5e1',
+                                  background: 
+                                    cand.payment_status === 'Verified' || cand.payment_status === 'Completed' ? '#f0fdf4' :
+                                    cand.payment_status === 'Scanned' ? '#eff6ff' :
+                                    cand.payment_status === 'Cancelled' ? '#fef2f2' : '#fffbeb',
+                                  color: 
+                                    cand.payment_status === 'Verified' || cand.payment_status === 'Completed' ? '#166534' :
+                                    cand.payment_status === 'Scanned' ? '#1e40af' :
+                                    cand.payment_status === 'Cancelled' ? '#991b1b' : '#92400e',
+                                }}
+                              >
+                                <option value="Pending">Pending</option>
+                                <option value="Scanned">Scanned</option>
+                                <option value="Verified">Verified</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
+                            </td>
+
+                            {/* ACTIONS */}
+                            <td style={{ padding: '14px 16px', verticalAlign: 'top', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCandidate(cand);
+                                    setCandidateNotesValue(cand.notes || '');
+                                  }}
+                                  className="button outline"
+                                  style={{ padding: '5px 10px', fontSize: '11px' }}
+                                  title="View Full Profile & GPS Log"
+                                >
+                                  👁 View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCourse(cand.id, cand.candidate_id)}
+                                  style={{
+                                    background: '#fee2e2',
+                                    border: '1px solid #fca5a5',
+                                    color: '#dc2626',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Delete Registration"
+                                >
+                                  🗑
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
       </div>
+
+      {/* CANDIDATE DETAILS & GPS SCAN AUDIT MODAL */}
+      {selectedCandidate && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '20px',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '680px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px',
+            boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+            border: '1px solid #e2e8f0',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px' }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span 
+                    style={{ 
+                      fontFamily: 'monospace', 
+                      fontWeight: 800, 
+                      fontSize: '14px', 
+                      color: '#c2410c', 
+                      background: '#fff7ed', 
+                      border: '1px solid #fed7aa', 
+                      padding: '3px 10px', 
+                      borderRadius: '6px' 
+                    }}
+                  >
+                    {selectedCandidate.candidate_id}
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                    Registered on {new Date(selectedCandidate.created_at).toLocaleString()}
+                  </span>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--navy)' }}>
+                  {selectedCandidate.name}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedCandidate(null)}
+                style={{
+                  border: 'none',
+                  background: '#f1f5f9',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  color: '#64748b',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* DETAILS GRID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '13px', marginBottom: '20px' }}>
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Father&apos;s Name</small>
+                <strong style={{ color: '#0f172a' }}>{selectedCandidate.father_name}</strong>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Contact Phone</small>
+                <a href={`tel:+91${selectedCandidate.contact_number}`} style={{ color: '#0284c7', fontWeight: 700, textDecoration: 'none' }}>
+                  +91 {selectedCandidate.contact_number}
+                </a>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Candidate Email</small>
+                <a href={`mailto:${selectedCandidate.email}`} style={{ color: '#0284c7', textDecoration: 'none' }}>
+                  {selectedCandidate.email}
+                </a>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Government ID ({selectedCandidate.id_type})</small>
+                <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{selectedCandidate.id_number}</strong>
+              </div>
+
+              <div style={{ gridColumn: 'span 2', background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>Target Industrial Course</small>
+                <strong style={{ color: 'var(--orange)', fontSize: '14px' }}>{selectedCandidate.course}</strong>
+              </div>
+            </div>
+
+            {/* QR SCAN & GEOLOCATION AUDIT BOX */}
+            <div style={{ 
+              background: selectedCandidate.scanned ? '#f0fdf4' : '#fffbeb', 
+              border: `1.5px solid ${selectedCandidate.scanned ? '#86efac' : '#fde68a'}`,
+              borderRadius: '12px', 
+              padding: '16px 20px', 
+              marginBottom: '20px' 
+            }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: selectedCandidate.scanned ? '#166534' : '#92400e' }}>
+                {selectedCandidate.scanned ? '✅ QR Code Scan Audit Record' : '⏳ No QR Scan Recorded Yet'}
+              </h4>
+
+              {selectedCandidate.scanned ? (
+                <div style={{ display: 'grid', gap: '6px', fontSize: '12px', color: '#166534' }}>
+                  <div><strong>Scanned Timestamp:</strong> {new Date(selectedCandidate.scanned_at).toLocaleString()}</div>
+                  {selectedCandidate.scan_lat && selectedCandidate.scan_long ? (
+                    <>
+                      <div><strong>GPS Coordinates:</strong> Latitude: {Number(selectedCandidate.scan_lat).toFixed(6)}, Longitude: {Number(selectedCandidate.scan_long).toFixed(6)}</div>
+                      <div style={{ marginTop: '8px' }}>
+                        <a
+                          href={`https://www.google.com/maps?q=${selectedCandidate.scan_lat},${selectedCandidate.scan_long}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            background: '#16a34a',
+                            color: '#fff',
+                            textDecoration: 'none',
+                            padding: '6px 14px',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <span>📍 Open Exact GPS Location on Google Maps ↗</span>
+                        </a>
+                      </div>
+                    </>
+                  ) : (
+                    <div>GPS Coordinates: Not provided by candidate device (Scan timestamp logged via network IP).</div>
+                  )}
+                </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: '12px', color: '#78350f' }}>
+                  The candidate has not scanned the bank account QR code yet. When scanned, latitude, longitude, and timestamp will automatically appear here.
+                </p>
+              )}
+            </div>
+
+            {/* ADMIN NOTES */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Internal Admin Notes:
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Add notes about payment verification, batch allocation, or call logs..."
+                value={candidateNotesValue}
+                onChange={(e) => setCandidateNotesValue(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  disabled={savingNotes}
+                  onClick={() => handleSaveCourseNotes(selectedCandidate.id)}
+                  className="button primary"
+                  style={{ padding: '7px 16px', fontSize: '12px' }}
+                >
+                  {savingNotes ? 'Saving…' : 'Save Notes'}
+                </button>
+              </div>
+            </div>
+
+            {/* FOOTER ACTIONS */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a
+                  href={`tel:+91${selectedCandidate.contact_number}`}
+                  className="button outline"
+                  style={{ padding: '7px 12px', fontSize: '12px' }}
+                >
+                  📞 Call
+                </a>
+                <a
+                  href={`https://wa.me/91${selectedCandidate.contact_number}?text=${encodeURIComponent(`Hello ${selectedCandidate.name}, this is Soft Tech Solution regarding your course registration (Candidate ID: ${selectedCandidate.candidate_id}).`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: '#16a34a',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    padding: '7px 12px',
+                    borderRadius: '7px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                  }}
+                >
+                  💬 WhatsApp
+                </a>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedCandidate(null)}
+                className="button outline"
+                style={{ padding: '7px 18px', fontSize: '12px' }}
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* LEAD DETAILS MODAL */}
       {selectedLead && (
@@ -1510,7 +2395,7 @@ export default function AdminDashboardPage() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '20px', color: 'var(--navy)', margin: 0 }}>Enquiry Details</h3>
-              <button 
+              <button
                 onClick={() => setSelectedLead(null)}
                 style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}
               >
@@ -1566,9 +2451,9 @@ export default function AdminDashboardPage() {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
               {selectedLead.phone && (
-                <a 
-                  href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, '')}`} 
-                  target="_blank" 
+                <a
+                  href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="button primary"
                   style={{ padding: '8px 16px', fontSize: '13px' }}
@@ -1576,7 +2461,7 @@ export default function AdminDashboardPage() {
                   WhatsApp Client ↗
                 </a>
               )}
-              <button 
+              <button
                 onClick={() => setSelectedLead(null)}
                 className="button outline"
                 style={{ padding: '8px 16px', fontSize: '13px' }}
@@ -1600,7 +2485,7 @@ export default function AdminDashboardPage() {
           padding: '20px',
           zIndex: 9999,
         }}>
-          <form 
+          <form
             onSubmit={handleCreateAdmin}
             style={{
               background: '#ffffff',
@@ -1618,7 +2503,7 @@ export default function AdminDashboardPage() {
                   Create administrative credentials for a team member.
                 </p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowNewAdminModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
@@ -1631,8 +2516,8 @@ export default function AdminDashboardPage() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
                 Full Name
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 placeholder="e.g. Aashutosh Kumar / Ankitosh Kumar"
                 value={newAdminForm.name}
@@ -1652,8 +2537,8 @@ export default function AdminDashboardPage() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
                 Admin Email Address
               </label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 placeholder="colleague@softtechsolution.com"
                 value={newAdminForm.email}
@@ -1697,8 +2582,8 @@ export default function AdminDashboardPage() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
                 Password
               </label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 placeholder="Min 6 characters"
                 value={newAdminForm.password}
@@ -1715,7 +2600,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowNewAdminModal(false)}
                 className="button outline"
@@ -1723,7 +2608,7 @@ export default function AdminDashboardPage() {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 disabled={creatingAdmin}
                 className="button primary"
@@ -1748,7 +2633,7 @@ export default function AdminDashboardPage() {
           padding: '20px',
           zIndex: 9999,
         }}>
-          <form 
+          <form
             onSubmit={handleResetPassword}
             style={{
               background: '#ffffff',
@@ -1766,7 +2651,7 @@ export default function AdminDashboardPage() {
                   Updating access for <b>{resetTargetUser.name}</b> ({resetTargetUser.email})
                 </p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowResetPassModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
@@ -1779,8 +2664,8 @@ export default function AdminDashboardPage() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#374151' }}>
                 New Password
               </label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 placeholder="Minimum 6 characters"
                 value={newPasswordValue}
@@ -1797,7 +2682,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowResetPassModal(false)}
                 className="button outline"
@@ -1805,7 +2690,7 @@ export default function AdminDashboardPage() {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 disabled={updatingPassword}
                 className="button primary"
@@ -1846,7 +2731,7 @@ export default function AdminDashboardPage() {
                   <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>Permanent serverless storage for all client proposals.</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowSetupModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#64748b' }}
               >
@@ -1886,16 +2771,16 @@ export default function AdminDashboardPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <a 
-                href="https://vercel.com/dashboard" 
-                target="_blank" 
+              <a
+                href="https://vercel.com/dashboard"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="button primary"
                 style={{ padding: '9px 18px', fontSize: '13px' }}
               >
                 Go to Vercel Storage ↗
               </a>
-              <button 
+              <button
                 onClick={() => setShowSetupModal(false)}
                 className="button outline"
                 style={{ padding: '9px 18px', fontSize: '13px' }}
