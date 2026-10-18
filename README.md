@@ -176,15 +176,44 @@ flowchart TD
    - Dispatches payload to `/api/courses/scan` and updates the database record.
    - Renders a live verification badge on screen:
      `✅ QR Scan Entry Recorded! Lat: 25.5941, Long: 85.1376` with a direct **"View on Google Maps ↗"** button.
-3. **Amount Selection & UTR Receipt Generation:**
-   - **Custom & Preset Amount Input:** Students can select standard fee presets (₹5,000, ₹10,000, ₹15,000) or enter a custom amount (₹1 to ₹1,00,000). The dynamic UPI link & QR automatically pre-fills the entered amount (`&am=${amount}`).
-   - **Mandatory 12-Digit UTR Validation:** After payment completion via PhonePe, GPay, Paytm, or YONO, the student enters their 12-digit UPI Transaction Reference (UTR) number.
-   - **Automated Official Receipt Generation:**
-     - Generates an official verified sequential receipt number: `REC-2026-CANDXXX-XXXX`.
-     - Automatically converts amount to words in Indian numbering system (e.g., *Fifteen Thousand Rupees Only*).
-     - Renders a printable/downloadable official Corporate Fee Receipt complete with Soft Tech Solution letterhead, CIN, GSTIN, verified green holographic stamp seal, student particulars, and authorized signatory.
-     - Saves the receipt snapshot (`receipt_data`), UTR number (`utr_number`), amount (`amount`), and payment timestamp (`paid_at`) into the database (`PATCH /api/courses/[id]`).
-     - Offers 1-click **"💬 Send Receipt on WhatsApp"** and **"🖨️ Print / Save Official Receipt (PDF)"** with isolated `@media print` A4 formatting.
+3. **Blank Default Amount Input & Dynamic UPI Generation:**
+   - **Blank Input by Default:** The **Payment / Fee Amount (₹)** input starts completely blank (`''`) with placeholder `Enter fee amount (e.g. 5000 or 15000)` so candidates are never forced to pay a pre-filled hardcoded value.
+   - **Custom & Preset Amount Chips:** Candidates can enter any custom payment amount or click 1-touch preset chips:
+     * `₹15,000 (Full Course Fees)`
+     * `₹10,000 (1st Installment)`
+     * `₹5,000 (Advance / Seat Booking)`
+   - **Dynamic QR & Mobile UPI Links:** When amount is entered, the UPI QR URI dynamically injects `&am=${amount}`. If left blank, `&am=` is omitted, allowing the candidate to enter any desired amount directly inside their UPI app (PhonePe, Google Pay, Paytm, or SBI YONO).
+
+4. **Crash-Proof Receipt Generation & Session Holding Across Page Reloads:**
+   - **Zero Runtime Errors:** Fully hardened client-side error handling and receipt data serialization with safe `numberToWordsINR` text conversion.
+   - **Session Persistence:** When a candidate enters their 12-digit Bank UTR and submits, the confirmation state is permanently saved into `sessionStorage` and `localStorage` (`sts_payment_${candidateId}`).
+   - **Safe Reload Holding:** If the user reloads or refreshes the page, the verified state is seamlessly held without resetting or showing "page couldn't load" errors, keeping the verified banner, amount, UTR, and receipt access available.
+
+5. **Dynamic Amount Database Persistence & Admin CRM Synchronization:**
+   - **Database Storage:** The dynamic amount submitted on the UTR page is stored in `course_registrations.amount`, `utr_number`, `receipt_number`, and `receipt_data` JSON snapshot.
+   - **Admin Table & Receipt Modal:** The Admin CRM table, candidate drawer, and receipt viewer dynamically show the candidate's actual paid amount (`₹5,000`, `₹10,000`, `₹15,000`, etc.) and exact amount in words.
+   - **Admin Amount & UTR Editor:** Administrators can manually edit or correct any candidate's amount or UTR directly from the drawer; saving automatically regenerates the receipt data and words in the database.
+   - **Official WhatsApp Delivery Format:** Sends complete official admission receipt details directly to Founder WhatsApp (`+91 9117696512`) with the exact verified format:
+     ```text
+     Hello Sir,
+     Here is the official course fee payment receipt details:
+
+     🧾 Receipt No: REC-2026-CAND005-9154
+     👤 Candidate ID: cand 005
+     👤 Candidate Name: Rohit KUMAR
+     👨‍👦 Father's Name: mukhesh prasad
+     📞 Contact: +91 8271311882
+     ✉️ Email: ankitoshgupta4379@gmail.com
+     🪪 Govt ID: AADHAAR - 856545256222
+     📚 Course: Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)
+     💰 Amount Paid: ₹5,000 (Five Thousand Rupees Only)
+     🏦 Bank UTR: 540228867068
+     💳 Mode: UPI / SBI Bank Transfer
+     📅 Date: 18 Oct 2026
+     ✅ Payment Status: Verified
+
+     Please verify admission record. Thank you!
+     ```
 
 ---
 
@@ -197,8 +226,9 @@ Within the `/admin` portal, administrators can switch to the **"🎓 Training & 
 | **KPI Metrics** | Total Candidates, QR Scanned (with GPS), Pending QR Scan, Enrolled & Verified, and **💰 Fees Collected (INR)**. |
 | **Search Engine** | Real-time search by Candidate ID (e.g. `cand 001`), Student Name, Mobile, Email, Govt ID, or UTR number. |
 | **Status Filter** | Filter by `All`, `Scanned Only (with GPS)`, `Not Scanned Yet`, `Pending`, `Verified`, `Completed`, `Cancelled`. |
-| **Amount & UTR Column** | Table displays paid amount in INR (`₹15,000`), 12-digit UTR with 1-click copy, and receipt status chip. |
-| **Admin Receipt Viewer** | 1-click **"📄 Receipt"** action opens the official Soft Tech Solution Fee Receipt modal for any candidate with direct **"🖨️ Print / Save PDF"** and student WhatsApp delivery. |
+| **Dynamic Amount & UTR** | Displays exact amount submitted by candidate (`cand.amount` / `receipt_data.amount`), 12-digit UTR with 1-click copy, and receipt status chip. |
+| **Admin Receipt Viewer** | 1-click **"📄 Receipt"** opens the official Soft Tech Solution Fee Receipt modal showing dynamic amount, words, stamp seal, with 1-click **"🖨️ Print / Save PDF"** and WhatsApp receipt forwarding to `+91 9117696512`. |
+| **Drawer Editor** | Allows admins to edit Amount, 12-digit UTR, Payment Status, and Admin Notes; updates `receipt_data` dynamically. |
 | **Candidate ID Chip** | Instant 1-click copy button for `cand 001`. |
 | **Direct Contact** | 1-click 📞 **Call** and 💬 **WhatsApp** direct links with pre-filled student context. |
 | **GPS Verification** | Displays scanned latitude & longitude with a 1-click **"📍 View on Google Maps"** link opening `https://www.google.com/maps?q={lat},{long}`. |
