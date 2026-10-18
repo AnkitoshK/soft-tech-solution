@@ -176,13 +176,15 @@ flowchart TD
    - Dispatches payload to `/api/courses/scan` and updates the database record.
    - Renders a live verification badge on screen:
      `✅ QR Scan Entry Recorded! Lat: 25.5941, Long: 85.1376` with a direct **"View on Google Maps ↗"** button.
-3. **Payment Successful Pop-Up Modal:**
-   - After scanning the QR and completing payment, students click **"✅ Confirm Payment"** (with optional 12-digit UTR number).
-   - An interactive celebration modal **"🎉 Payment Successful!"** pops up with:
-     - Verified candidate ID, name, course, and SBI transaction details.
-     - Direct **"💬 WhatsApp Admission Slip to Mentors"** link.
-     - **"🖨️ Print / Save Slip"** utility.
-     - Automatically updates `payment_status = 'Completed'` in the database via `PATCH /api/courses/[id]`.
+3. **Amount Selection & UTR Receipt Generation:**
+   - **Custom & Preset Amount Input:** Students can select standard fee presets (₹5,000, ₹10,000, ₹15,000) or enter a custom amount (₹1 to ₹1,00,000). The dynamic UPI link & QR automatically pre-fills the entered amount (`&am=${amount}`).
+   - **Mandatory 12-Digit UTR Validation:** After payment completion via PhonePe, GPay, Paytm, or YONO, the student enters their 12-digit UPI Transaction Reference (UTR) number.
+   - **Automated Official Receipt Generation:**
+     - Generates an official verified sequential receipt number: `REC-2026-CANDXXX-XXXX`.
+     - Automatically converts amount to words in Indian numbering system (e.g., *Fifteen Thousand Rupees Only*).
+     - Renders a printable/downloadable official Corporate Fee Receipt complete with Soft Tech Solution letterhead, CIN, GSTIN, verified green holographic stamp seal, student particulars, and authorized signatory.
+     - Saves the receipt snapshot (`receipt_data`), UTR number (`utr_number`), amount (`amount`), and payment timestamp (`paid_at`) into the database (`PATCH /api/courses/[id]`).
+     - Offers 1-click **"💬 Send Receipt on WhatsApp"** and **"🖨️ Print / Save Official Receipt (PDF)"** with isolated `@media print` A4 formatting.
 
 ---
 
@@ -192,15 +194,17 @@ Within the `/admin` portal, administrators can switch to the **"🎓 Training & 
 
 | Feature | Description |
 | :--- | :--- |
-| **KPI Metrics** | Total Candidates, QR Scanned (with GPS), Pending QR Scan, and Enrolled & Verified counters. |
-| **Search Engine** | Real-time search by Candidate ID (e.g. `cand 001`), Student Name, Mobile, Email, or Govt ID. |
+| **KPI Metrics** | Total Candidates, QR Scanned (with GPS), Pending QR Scan, Enrolled & Verified, and **💰 Fees Collected (INR)**. |
+| **Search Engine** | Real-time search by Candidate ID (e.g. `cand 001`), Student Name, Mobile, Email, Govt ID, or UTR number. |
 | **Status Filter** | Filter by `All`, `Scanned Only (with GPS)`, `Not Scanned Yet`, `Pending`, `Verified`, `Completed`, `Cancelled`. |
+| **Amount & UTR Column** | Table displays paid amount in INR (`₹15,000`), 12-digit UTR with 1-click copy, and receipt status chip. |
+| **Admin Receipt Viewer** | 1-click **"📄 Receipt"** action opens the official Soft Tech Solution Fee Receipt modal for any candidate with direct **"🖨️ Print / Save PDF"** and student WhatsApp delivery. |
 | **Candidate ID Chip** | Instant 1-click copy button for `cand 001`. |
 | **Direct Contact** | 1-click 📞 **Call** and 💬 **WhatsApp** direct links with pre-filled student context. |
 | **GPS Verification** | Displays scanned latitude & longitude with a 1-click **"📍 View on Google Maps"** link opening `https://www.google.com/maps?q={lat},{long}`. |
 | **Status Management** | Live dropdown to change status (`Pending` → `Scanned` → `Verified` → `Completed`). |
-| **Candidate Modal** | Deep audit view with registration timestamp, full ID proof, GPS log, and internal **Admin Notes** editor. |
-| **CSV Export** | 1-click **Export Candidates CSV** generates compliant administrative spreadsheets. |
+| **Candidate Modal** | Deep audit view with registration timestamp, full ID proof, GPS log, Amount, UTR, and internal **Admin Notes** editor. |
+| **CSV Export** | 1-click **Export Candidates CSV** generates compliant administrative spreadsheets including Amount, UTR, Receipt No., and Paid At. |
 
 ---
 
@@ -218,6 +222,11 @@ CREATE TABLE IF NOT EXISTS public.course_registrations (
   id_number TEXT NOT NULL,                                  -- Aadhaar (12 digits) or PAN (10 chars)
   email TEXT NOT NULL,                                      -- Email address
   course TEXT NOT NULL DEFAULT 'Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)',
+  amount TEXT NOT NULL DEFAULT '15000',                     -- Payment fee amount in INR
+  utr_number TEXT DEFAULT '',                               -- 12-digit bank/UPI transaction reference
+  receipt_number TEXT DEFAULT '',                           -- Sequential receipt identifier (e.g. REC-2026-CAND001-XXXX)
+  receipt_data JSONB DEFAULT NULL,                          -- Snapshot of complete official fee receipt
+  paid_at TIMESTAMPTZ,                                      -- Timestamp of confirmed payment & UTR entry
   scanned BOOLEAN NOT NULL DEFAULT FALSE,                   -- QR scan status
   scanned_at TIMESTAMPTZ,                                   -- Timestamp of QR scan
   scan_lat DOUBLE PRECISION,                                -- GPS Latitude

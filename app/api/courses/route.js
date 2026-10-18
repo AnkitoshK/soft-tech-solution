@@ -46,6 +46,13 @@ export async function PATCH(request) {
     const updates = {};
     if (body.payment_status) updates.payment_status = safe(body.payment_status, 40);
     if (body.notes !== undefined) updates.notes = safe(body.notes, 5000);
+    if (body.amount !== undefined) updates.amount = safe(body.amount, 50);
+    if (body.utr_number !== undefined) updates.utr_number = safe(body.utr_number, 100);
+    if (body.receipt_number !== undefined) updates.receipt_number = safe(body.receipt_number, 100);
+    if (body.receipt_data !== undefined) {
+      updates.receipt_data = typeof body.receipt_data === 'object' ? JSON.stringify(body.receipt_data) : String(body.receipt_data);
+    }
+    if (body.paid_at !== undefined) updates.paid_at = safe(body.paid_at, 60);
 
     if (!Object.keys(updates).length) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });

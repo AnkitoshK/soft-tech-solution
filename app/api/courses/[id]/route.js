@@ -35,6 +35,11 @@ export async function PATCH(request, context) {
     const updates = {};
     if (body.payment_status) updates.payment_status = String(body.payment_status);
     if (body.notes !== undefined) updates.notes = String(body.notes);
+    if (body.amount !== undefined) updates.amount = String(body.amount);
+    if (body.utr_number !== undefined) updates.utr_number = String(body.utr_number);
+    if (body.receipt_number !== undefined) updates.receipt_number = String(body.receipt_number);
+    if (body.receipt_data !== undefined) updates.receipt_data = typeof body.receipt_data === 'object' ? JSON.stringify(body.receipt_data) : String(body.receipt_data);
+    if (body.paid_at !== undefined) updates.paid_at = String(body.paid_at);
 
     const updated = await updateCourseRegistration(id, updates);
     return NextResponse.json({ ok: true, candidate: updated || null }, { status: 200 });

@@ -5,6 +5,27 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 
+function numberToWordsINR(amount) {
+  const n = parseInt(amount, 10);
+  if (isNaN(n) || n === 0) return 'Zero Rupees Only';
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  
+  function inWords(num) {
+    if ((num = num.toString()).length > 9) return 'overflow';
+    const match = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!match) return '';
+    let str = '';
+    str += Number(match[1]) !== 0 ? (a[Number(match[1])] || b[match[1][0]] + ' ' + a[match[1][1]]) + 'Crore ' : '';
+    str += Number(match[2]) !== 0 ? (a[Number(match[2])] || b[match[2][0]] + ' ' + a[match[2][1]]) + 'Lakh ' : '';
+    str += Number(match[3]) !== 0 ? (a[Number(match[3])] || b[match[3][0]] + ' ' + a[match[3][1]]) + 'Thousand ' : '';
+    str += Number(match[4]) !== 0 ? (a[Number(match[4])] || b[match[4][0]] + ' ' + a[match[4][1]]) + 'Hundred ' : '';
+    str += Number(match[5]) !== 0 ? ((str !== '') ? 'and ' : '') + (a[Number(match[5])] || b[match[5][0]] + ' ' + a[match[5][1]]) : '';
+    return str.trim();
+  }
+  return inWords(n) + ' Rupees Only';
+}
+
 function PaymentContent() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get('id');
@@ -20,11 +41,14 @@ function PaymentContent() {
   const [copiedAcc, setCopiedAcc] = useState(false);
   const [copiedIfsc, setCopiedIfsc] = useState(false);
 
-  // Payment Confirmation & Pop-up Modal State
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  // Payment Confirmation, Amount & Official Receipt State
+  const [amount, setAmount] = useState('15000');
   const [utrNumber, setUtrNumber] = useState('');
+  const [formError, setFormError] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
 
   // Scan & Geolocation State
   const [scanStatus, setScanStatus] = useState('idle'); // 'idle' | 'locating' | 'recording' | 'scanned' | 'error'
@@ -38,9 +62,10 @@ function PaymentContent() {
   const accountNumber = process.env.NEXT_PUBLIC_BANK_ACCOUNT || '39797312414';
   const ifscCode = process.env.NEXT_PUBLIC_BANK_IFSC || 'SBIN0003002';
 
-  // Construct official UPI payment URI
+  // Construct official UPI payment URI with dynamic amount
   const candIdDisplay = candidate?.candidate_id || idParam || 'candidate';
-  const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&tn=${encodeURIComponent(`Course Enrollment ${candIdDisplay}`)}&cu=INR`;
+  const cleanAmountNum = amount && !isNaN(Number(amount)) && Number(amount) > 0 ? Number(amount).toString() : '15000';
+  const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&tn=${encodeURIComponent(`Course Enrollment ${candIdDisplay}`)}&am=${encodeURIComponent(cleanAmountNum)}&cu=INR`;
 
   // Fetch candidate registration info
   const fetchCandidate = useCallback(async () => {
@@ -58,7 +83,22 @@ function PaymentContent() {
       const data = await res.json();
       setCandidate(data);
 
-      if (data.payment_status === 'Completed' || data.payment_status === 'Verified') {
+      if (data.amount) {
+        setAmount(String(data.amount));
+      }
+      if (data.utr_number) {
+        setUtrNumber(String(data.utr_number));
+      }
+      if (data.receipt_data) {
+        try {
+          const parsed = typeof data.receipt_data === 'string' ? JSON.parse(data.receipt_data) : data.receipt_data;
+          setReceiptData(parsed);
+        } catch (e) {
+          console.warn('Failed to parse saved receipt_data', e);
+        }
+      }
+
+      if (data.payment_status === 'Completed' || data.payment_status === 'Verified' || data.receipt_number) {
         setPaymentConfirmed(true);
       }
 
@@ -200,24 +240,83 @@ function PaymentContent() {
   const handleConfirmPayment = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!candidate) return;
+
+    const cleanAmount = (amount || '').toString().trim() || '15000';
+    const cleanUtr = utrNumber.trim();
+
+    if (!cleanAmount || isNaN(Number(cleanAmount)) || Number(cleanAmount) <= 0) {
+      setFormError('Please enter a valid payment amount (e.g. 15000).');
+      return;
+    }
+    if (!cleanUtr || cleanUtr.length < 6) {
+      setFormError('Please enter your 12-digit Bank UTR or UPI Reference Number (minimum 6 characters).');
+      return;
+    }
+
     setConfirming(true);
-    const refId = utrNumber.trim() || `SBI-UPI-${Date.now().toString().slice(-6)}`;
+    setFormError('');
+
+    const candIdClean = (candidate.candidate_id || 'CAND').replace(/\s+/g, '').toUpperCase();
+    const receiptNum = candidate.receipt_number || `REC-${new Date().getFullYear()}-${candIdClean}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const paidAtIso = new Date().toISOString();
+
+    const receiptObj = {
+      receipt_number: receiptNum,
+      candidate_id: candidate.candidate_id,
+      candidate_name: candidate.name,
+      father_name: candidate.father_name,
+      contact_number: candidate.contact_number,
+      email: candidate.email,
+      id_type: candidate.id_type,
+      id_number: candidate.id_number,
+      course_name: candidate.course,
+      amount: cleanAmount,
+      amount_words: numberToWordsINR(cleanAmount),
+      utr_number: cleanUtr,
+      payment_mode: 'UPI / SBI Bank QR (Net Banking)',
+      bank_name: bankName,
+      account_number: accountNumber,
+      ifsc_code: ifscCode,
+      payee_name: payeeName,
+      upi_id: upiId,
+      payment_status: 'Paid & Verified',
+      paid_at: paidAtIso,
+      company_name: 'Soft Tech Solution',
+      company_address: 'Gola Road, Danapur, Patna, Bihar - 801503',
+      support_phone: '+91 9142491242',
+      support_email: 'support@softtechsolution.in',
+    };
+
     try {
       const candidateKey = candidate.id || candidate.candidate_id;
       const res = await fetch(`/api/courses/${encodeURIComponent(candidateKey)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          payment_status: 'Completed',
-          notes: `Payment completed online via SBI QR / UPI. Ref/UTR: ${refId}`,
+          amount: cleanAmount,
+          utr_number: cleanUtr,
+          receipt_number: receiptNum,
+          receipt_data: JSON.stringify(receiptObj),
+          paid_at: paidAtIso,
+          payment_status: 'Verified',
+          notes: `Payment confirmed by student. Amount: ₹${cleanAmount}, UTR: ${cleanUtr}, Receipt: ${receiptNum}`,
         }),
       });
+
       if (res.ok) {
+        const json = await res.json().catch(() => ({}));
+        const updated = json.candidate || {};
         setPaymentConfirmed(true);
+        setReceiptData(receiptObj);
         setCandidate((prev) => ({
           ...prev,
-          payment_status: 'Completed',
-          notes: `Payment completed online via SBI QR / UPI. Ref/UTR: ${refId}`,
+          ...updated,
+          amount: cleanAmount,
+          utr_number: cleanUtr,
+          receipt_number: receiptNum,
+          receipt_data: JSON.stringify(receiptObj),
+          paid_at: paidAtIso,
+          payment_status: 'Verified',
         }));
       }
     } catch (err) {
@@ -718,92 +817,214 @@ function PaymentContent() {
             <div 
               style={{ 
                 marginTop: '18px', 
-                padding: '18px 16px', 
+                padding: '22px 20px', 
                 background: paymentConfirmed ? '#f0fdf4' : '#faf5ff', 
-                borderRadius: '12px', 
+                borderRadius: '14px', 
                 border: `1.5px solid ${paymentConfirmed ? '#86efac' : '#d8b4fe'}`, 
-                textAlign: 'center' 
+                textAlign: 'left',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
               }}
             >
-              <span 
-                style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 800, 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.08em', 
-                  color: paymentConfirmed ? '#16a34a' : '#7e22ce', 
-                  display: 'block', 
-                  marginBottom: '6px' 
-                }}
-              >
-                {paymentConfirmed ? '✓ PAYMENT CONFIRMED & VERIFIED' : 'STEP 2: CONFIRM TRANSACTION'}
-              </span>
-              <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
-                {paymentConfirmed ? 'Seat Reserved Successfully!' : 'Done with Bank QR / UPI Payment?'}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <span 
+                  style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 800, 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.08em', 
+                    color: paymentConfirmed ? '#16a34a' : '#7e22ce', 
+                    background: paymentConfirmed ? '#dcfce7' : '#f3e8ff',
+                    padding: '3px 10px',
+                    borderRadius: '12px'
+                  }}
+                >
+                  {paymentConfirmed ? '✓ PAYMENT VERIFIED & RECEIPT GENERATED' : 'STEP 2: ENTER PAYMENT & GENERATE RECEIPT'}
+                </span>
+                {paymentConfirmed && (candidate?.receipt_number || receiptData?.receipt_number) && (
+                  <span style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 800, color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '4px' }}>
+                    {candidate?.receipt_number || receiptData?.receipt_number}
+                  </span>
+                )}
+              </div>
+
+              <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+                {paymentConfirmed ? 'Payment Recorded & Official Receipt Generated!' : 'Confirm Payment Amount & Bank UTR Number'}
               </h4>
-              <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
                 {paymentConfirmed 
-                  ? 'Your admission receipt is ready and recorded in the database.' 
-                  : 'Click below to verify your payment and trigger your official admission confirmation.'}
+                  ? 'Your admission receipt has been saved into the database and is permanently available in the Admin Panel.' 
+                  : 'Enter the amount paid and your 12-digit Bank UTR/UPI reference number to generate your official receipt.'}
               </p>
 
               {!paymentConfirmed ? (
-                <div style={{ display: 'flex', gap: '8px', maxWidth: '420px', margin: '0 auto', flexWrap: 'wrap' }}>
-                  <input
-                    type="text"
-                    placeholder="Enter 12-digit UTR / UPI Ref (Optional)"
-                    value={utrNumber}
-                    onChange={(e) => setUtrNumber(e.target.value)}
-                    style={{
-                      flex: 1,
-                      minWidth: '180px',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '12px',
-                      outline: 'none',
-                      background: '#fff'
-                    }}
-                  />
+                <div>
+                  {/* FIELD 1: AMOUNT */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Payment / Fee Amount (₹) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: '#64748b', fontSize: '15px' }}>₹</span>
+                      <input
+                        type="number"
+                        placeholder="Enter fee amount (e.g. 15000)"
+                        value={amount}
+                        onChange={(e) => {
+                          setAmount(e.target.value);
+                          setFormError('');
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px 11px 32px',
+                          borderRadius: '8px',
+                          border: '1.5px solid #cbd5e1',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          outline: 'none',
+                          background: '#fff',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    {/* QUICK PRESET CHIPS */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                      {[
+                        { label: '₹15,000 (Full Course Fees)', val: '15000' },
+                        { label: '₹10,000 (1st Installment)', val: '10000' },
+                        { label: '₹5,000 (Advance / Seat Booking)', val: '5000' },
+                      ].map(chip => (
+                        <button
+                          key={chip.val}
+                          type="button"
+                          onClick={() => {
+                            setAmount(chip.val);
+                            setFormError('');
+                          }}
+                          style={{
+                            background: String(amount) === chip.val ? '#0f172a' : '#f1f5f9',
+                            color: String(amount) === chip.val ? '#fff' : '#334155',
+                            border: `1px solid ${String(amount) === chip.val ? '#0f172a' : '#cbd5e1'}`,
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* FIELD 2: 12-DIGIT UTR / UPI REF */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      12-Digit Bank UTR / UPI Reference Number <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 428912345678 (From PhonePe, Google Pay, Paytm, or SBI)"
+                      value={utrNumber}
+                      onChange={(e) => {
+                        setUtrNumber(e.target.value);
+                        setFormError('');
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '8px',
+                        border: '1.5px solid #cbd5e1',
+                        fontSize: '13px',
+                        fontFamily: 'monospace',
+                        fontWeight: 600,
+                        color: '#0f172a',
+                        outline: 'none',
+                        background: '#fff',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <small style={{ display: 'block', color: '#64748b', fontSize: '11px', marginTop: '4px' }}>
+                      💡 Found on your payment receipt screen as &quot;UTR&quot;, &quot;UPI Ref ID&quot;, or &quot;Bank Reference No&quot;.
+                    </small>
+                  </div>
+
+                  {/* ERROR MESSAGE IF ANY */}
+                  {formError && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '9px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, marginBottom: '14px' }}>
+                      ⚠️ {formError}
+                    </div>
+                  )}
+
+                  {/* SUBMIT BUTTON */}
                   <button
                     type="button"
                     onClick={handleConfirmPayment}
                     disabled={confirming}
                     style={{
+                      width: '100%',
                       background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
                       color: '#fff',
                       border: 0,
-                      padding: '10px 16px',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      fontWeight: 700,
+                      padding: '13px 20px',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      fontWeight: 800,
                       cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 4px 12px rgba(22,163,74,0.25)'
+                      boxShadow: '0 6px 18px rgba(22,163,74,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
                     }}
                   >
-                    {confirming ? 'Verifying...' : '✅ Confirm Payment'}
+                    <span>{confirming ? 'Saving to Database & Generating Receipt…' : '📄 Submit UTR & Generate Official Receipt'}</span>
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowSuccessModal(true)}
-                    style={{
-                      background: '#16a34a',
-                      color: '#fff',
-                      border: 0,
-                      padding: '9px 18px',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(22,163,74,0.25)'
-                    }}
-                  >
-                    🎉 View Payment Success Slip
-                  </button>
+                <div>
+                  <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px 16px', border: '1px solid #bbf7d0', marginBottom: '16px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ color: '#64748b' }}>Amount Paid:</span>
+                      <strong style={{ color: '#16a34a', fontSize: '15px' }}>₹{Number(candidate?.amount || amount || 15000).toLocaleString('en-IN')}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ color: '#64748b' }}>Bank UTR:</span>
+                      <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{candidate?.utr_number || utrNumber}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Official Receipt No:</span>
+                      <strong style={{ fontFamily: 'monospace', color: '#c2410c' }}>{candidate?.receipt_number || receiptData?.receipt_number || 'REC-VERIFIED'}</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowSuccessModal(true)}
+                      style={{
+                        flex: 1,
+                        minWidth: '200px',
+                        background: '#16a34a',
+                        color: '#fff',
+                        border: 0,
+                        padding: '12px 18px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(22,163,74,0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>🖨️ View &amp; Print Official Receipt</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -897,7 +1118,7 @@ function PaymentContent() {
               </p>
 
               <a
-                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir, I have registered for the course.\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nCourse: ${candidate.course}\nI have scanned the bank QR code.`)}`}
+                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir, I have registered for the course.\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nCourse: ${candidate.course}\nAmount: ₹${candidate.amount || amount}\nUTR/Ref: ${candidate.utr_number || utrNumber || 'PAID'}\nReceipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'N/A'}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -926,7 +1147,7 @@ function PaymentContent() {
       </div>
 
       {/* ============================================================
-          PAYMENT SUCCESSFUL POP-UP MODAL
+          OFFICIAL FEE PAYMENT RECEIPT & ADMISSION CONFIRMATION MODAL
           ============================================================ */}
       {showSuccessModal && (
         <div
@@ -934,224 +1155,323 @@ function PaymentContent() {
             position: 'fixed',
             inset: 0,
             zIndex: 99999,
-            background: 'rgba(15, 23, 42, 0.78)',
+            background: 'rgba(15, 23, 42, 0.8)',
             backdropFilter: 'blur(8px)',
             display: 'grid',
             placeItems: 'center',
-            padding: '20px',
+            padding: '16px',
             overflowY: 'auto'
           }}
           onClick={() => setShowSuccessModal(false)}
         >
+          {/* PRINT-SPECIFIC CSS RULES */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #official-receipt-print-area, #official-receipt-print-area * {
+                visibility: visible !important;
+              }
+              #official-receipt-print-area {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                background: #ffffff !important;
+              }
+              .receipt-no-print {
+                display: none !important;
+              }
+            }
+          ` }} />
+
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '24px',
-              maxWidth: '520px',
+              borderRadius: '20px',
+              maxWidth: '680px',
               width: '100%',
-              padding: '36px 28px',
+              padding: '0',
               boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
               border: '1px solid #e2e8f0',
-              textAlign: 'center',
               position: 'relative',
+              overflow: 'hidden',
               animation: 'scaleUp 0.25s ease-out',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* CLOSE BUTTON */}
-            <button
-              onClick={() => setShowSuccessModal(false)}
-              aria-label="Close Modal"
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '18px',
-                background: '#f1f5f9',
-                border: 0,
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 800,
-                color: '#64748b',
-                display: 'grid',
-                placeItems: 'center'
-              }}
-            >
-              ✕
-            </button>
-
-            {/* CELEBRATION ICON */}
-            <div
-              style={{
-                width: '76px',
-                height: '76px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '40px',
-                margin: '0 auto 16px',
-                boxShadow: '0 10px 25px rgba(34, 197, 94, 0.35)',
-              }}
-            >
-              ✓
-            </div>
-
-            <span 
-              style={{ 
-                fontSize: '11px', 
-                fontWeight: 800, 
-                color: '#16a34a', 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.12em',
-                background: '#dcfce7',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                display: 'inline-block',
-                marginBottom: '8px'
-              }}
-            >
-              TRANSACTION RECORDED
-            </span>
-
-            <h2 
-              style={{ 
-                fontFamily: 'Poppins, sans-serif', 
-                fontSize: '24px', 
-                fontWeight: 800, 
-                color: '#0f172a', 
-                margin: '4px 0 10px',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              Payment Successful!
-            </h2>
-
-            <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.6, margin: '0 0 20px' }}>
-              Congratulations <strong>{candidate.name}</strong>! Your payment for the <strong>Full Stack Web Development Course</strong> has been registered and verified successfully.
-            </p>
-
-            {/* OFFICIAL ADMISSION RECEIPT CARD */}
-            <div 
-              style={{ 
-                background: '#f8fafc', 
-                borderRadius: '14px', 
-                padding: '18px 20px', 
-                textAlign: 'left', 
-                border: '1px solid #e2e8f0', 
-                marginBottom: '20px' 
-              }}
-            >
-              <div style={{ display: 'grid', gap: '9px', fontSize: '13px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Candidate ID:</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#c2410c', fontSize: '14px', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
-                    {candidate.candidate_id}
-                  </strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Candidate Name:</span>
-                  <strong style={{ color: '#0f172a' }}>{candidate.name}</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Industrial Track:</span>
-                  <strong style={{ color: '#0f172a', fontSize: '12px', textAlign: 'right' }}>
-                    Full Stack Web Dev (24 Weeks)
-                  </strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Beneficiary Bank:</span>
-                  <span style={{ color: '#0f172a', fontWeight: 600 }}>State Bank of India (SBI)</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Beneficiary Name:</span>
-                  <span style={{ color: '#0f172a', fontWeight: 600 }}>Aashutosh Kumar</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Account Number:</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>39797312414</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
-                  <span style={{ color: '#64748b' }}>Transaction / UTR:</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#16a34a' }}>
-                    {utrNumber || 'SBI-UPI-VERIFIED'}
-                  </strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
-                  <span style={{ color: '#64748b' }}>Admission Status:</span>
-                  <span style={{ color: '#16a34a', fontWeight: 800, background: '#dcfce7', padding: '3px 8px', borderRadius: '4px', fontSize: '12px' }}>
-                    ✓ Confirmed &amp; Logged
-                  </span>
-                </div>
+            {/* MODAL ACTION HEADER BAR */}
+            <div className="receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📄</span>
+                <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>
+                  Official Course Fee Receipt
+                </span>
+                <span style={{ background: '#16a34a', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase' }}>
+                  Saved in Database
+                </span>
               </div>
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <a
-                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir,\nMy payment for Full Stack Web Development is SUCCESSFUL!\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nContact: +91 ${candidate.contact_number}\nUTR/Ref: ${utrNumber || 'SBI-UPI-VERIFIED'}\nPlease confirm my batch onboarding schedule.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: '#16a34a',
-                  color: '#fff',
-                  textDecoration: 'none',
-                  padding: '13px',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)',
-                }}
-              >
-                <span>💬 WhatsApp Admission Slip to Mentors</span>
-              </a>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={() => window.print()}
                   style={{
-                    flex: 1,
-                    background: '#f8fafc',
-                    border: '1px solid #cbd5e1',
-                    color: '#0f172a',
-                    padding: '11px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: 600,
+                    background: '#16a34a',
+                    border: 0,
+                    color: '#fff',
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 700,
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                 >
-                  🖨️ Print / Save Slip
+                  🖨️ Print / Save PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSuccessModal(false)}
+                  aria-label="Close Modal"
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 0,
+                    borderRadius: '50%',
+                    width: '28px',
+                    height: '28px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    color: '#cbd5e1',
+                    display: 'grid',
+                    placeItems: 'center'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* PRINTABLE RECEIPT CONTENT AREA */}
+            <div id="official-receipt-print-area" style={{ padding: '28px 32px', background: '#ffffff', color: '#0f172a' }}>
+              
+              {/* RECEIPT HEADER */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #e9772d, #f5a42a)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: '16px' }}>
+                      S
+                    </div>
+                    <h2 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '20px', fontWeight: 900, margin: 0, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                      SOFT TECH SOLUTION
+                    </h2>
+                  </div>
+                  <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                    Industrial Software Training &amp; Technology Solutions
+                  </p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
+                    Gola Road, Danapur, Patna, Bihar - 801503 · Contact: +91 9142491242
+                  </p>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'inline-block', background: '#0f172a', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                    FEE PAYMENT RECEIPT
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                    Receipt No: <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '12px' }}>{candidate.receipt_number || receiptData?.receipt_number || 'REC-PENDING'}</strong>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                    Date: <strong style={{ color: '#0f172a' }}>{new Date(candidate.paid_at || receiptData?.paid_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* CANDIDATE & COURSE DETAILS GRID */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 16px', marginBottom: '18px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px' }}>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Candidate ID:</span>
+                    <strong style={{ fontFamily: 'monospace', color: '#c2410c', fontSize: '13px', background: '#fff7ed', padding: '1px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '2px' }}>
+                      {candidate.candidate_id}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Student Full Name:</span>
+                    <strong style={{ color: '#0f172a', fontSize: '13px' }}>{candidate.name}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Father&apos;s Name:</span>
+                    <span style={{ color: '#334155' }}>{candidate.father_name}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Contact Number:</span>
+                    <span style={{ color: '#0f172a', fontWeight: 600 }}>+91 {candidate.contact_number}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Email Address:</span>
+                    <span style={{ color: '#334155' }}>{candidate.email}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Government ID ({candidate.id_type}):</span>
+                    <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: 600 }}>{candidate.id_number}</span>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e2e8f0', fontSize: '12px' }}>
+                  <span style={{ color: '#64748b', display: 'block', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>Enrolled Industrial Program:</span>
+                  <strong style={{ color: '#e9772d', fontSize: '12.5px' }}>{candidate.course}</strong>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                    Duration: 6 Months (24 Weeks) Industrial Training · Mon-Fri, 8:00 PM – 9:00 PM
+                  </div>
+                </div>
+              </div>
+
+              {/* PAYMENT BREAKDOWN TABLE */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '18px' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '1.5px solid #cbd5e1' }}>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>#</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>Description</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>Bank Reference / UTR</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>Amount (INR)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '10px', verticalAlign: 'top' }}>1</td>
+                    <td style={{ padding: '10px', verticalAlign: 'top' }}>
+                      <strong>Full Stack Web Development Industrial Training Fee</strong>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        Paid via SBI UPI / QR Code Transfer to Aashutosh Kumar (SBI A/c 39797312414)
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px', verticalAlign: 'top', fontFamily: 'monospace', fontWeight: 700, color: '#16a34a' }}>
+                      {candidate.utr_number || utrNumber || 'SBI-UPI-VERIFIED'}
+                    </td>
+                    <td style={{ padding: '10px', verticalAlign: 'top', textAlign: 'right', fontWeight: 800, fontSize: '13px' }}>
+                      ₹{Number(candidate.amount || amount || 15000).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                    <td colSpan={3} style={{ padding: '10px', textAlign: 'right' }}>
+                      Total Amount Received:
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontSize: '15px' }}>
+                      ₹{Number(candidate.amount || amount || 15000).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* AMOUNT IN WORDS & VERIFIED STAMP ROW */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+                <div style={{ maxWidth: '380px' }}>
+                  <span style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Amount in Words:</span>
+                  <strong style={{ fontSize: '12px', color: '#0f172a', fontStyle: 'italic' }}>
+                    {receiptData?.amount_words || numberToWordsINR(candidate.amount || amount || 15000)}
+                  </strong>
+                  <div style={{ marginTop: '6px', fontSize: '10.5px', color: '#64748b' }}>
+                    Payment Status: <strong style={{ color: '#16a34a' }}>✓ VERIFIED &amp; LOGGED IN DATABASE</strong>
+                  </div>
+                </div>
+
+                {/* OFFICIAL VERIFICATION STAMP */}
+                <div style={{
+                  border: '2px solid #16a34a',
+                  borderRadius: '10px',
+                  padding: '8px 14px',
+                  textAlign: 'center',
+                  background: '#f0fdf4',
+                  color: '#166534',
+                  boxShadow: '0 2px 8px rgba(22,163,74,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    ★ SOFT TECH SOLUTION ★
+                  </div>
+                  <div style={{ fontSize: '11px', fontWeight: 800 }}>
+                    FEES PAID &amp; CONFIRMED
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#15803d', marginTop: '2px' }}>
+                    AUTH CODE: {candidate.candidate_id?.replace(/\s+/g, '')}-{(candidate.receipt_number || 'VERIFIED').slice(-4)}
+                  </div>
+                </div>
+              </div>
+
+              {/* FOOTER & SIGNATORY */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: '10px', color: '#64748b' }}>
+                <div style={{ maxWidth: '360px', lineHeight: 1.4 }}>
+                  <p style={{ margin: '0 0 2px' }}><strong>Note:</strong> This is an officially generated computer fee receipt for training enrollment.</p>
+                  <p style={{ margin: 0 }}>Fees are recorded in Soft Tech Solution central database. For queries contact support@softtechsolution.in.</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderBottom: '1px solid #94a3b8', width: '130px', margin: '0 auto 4px', height: '24px' }}></div>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>Authorized Signatory</span>
+                  <div style={{ fontSize: '9px' }}>Soft Tech Solution</div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* MODAL FOOTER BUTTONS (HIDDEN IN PRINT) */}
+            <div className="receipt-no-print" style={{ background: '#f8fafc', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+              <a
+                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir,\nHere is my official fee payment confirmation receipt:\nReceipt No: ${candidate.receipt_number || receiptData?.receipt_number || 'REC-VERIFIED'}\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nAmount Paid: ₹${candidate.amount || amount}\nBank UTR: ${candidate.utr_number || utrNumber}\nCourse: ${candidate.course}\nPlease confirm my training onboarding schedule.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#16a34a',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(22,163,74,0.25)'
+                }}
+              >
+                <span>💬 WhatsApp Receipt to Mentors</span>
+              </a>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    background: '#0f172a',
+                    color: '#fff',
+                    border: 0,
+                    padding: '9px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  🖨️ Print Receipt
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSuccessModal(false)}
                   style={{
-                    flex: 1,
-                    background: '#0f172a',
-                    border: 0,
-                    color: '#fff',
-                    padding: '11px',
+                    background: '#fff',
+                    border: '1px solid #cbd5e1',
+                    color: '#475569',
+                    padding: '9px 16px',
                     borderRadius: '8px',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     fontWeight: 600,
-                    cursor: 'pointer',
+                    cursor: 'pointer'
                   }}
                 >
                   Done

@@ -103,6 +103,8 @@ export async function POST(request) {
       );
     }
 
+    const amount = safe(body.amount, 50) || '15000';
+
     const saved = await createCourseRegistration({
       name,
       contact_number: cleanPhone,
@@ -111,6 +113,7 @@ export async function POST(request) {
       id_number: cleanIdNumber,
       email,
       course,
+      amount,
     });
 
     return NextResponse.json(
