@@ -17,7 +17,7 @@ export async function POST(request) {
     let idType = safe(body.id_type, 20).toUpperCase();
     const rawIdNumber = safe(body.id_number, 50);
     const email = safe(body.email, 180).toLowerCase();
-    const course = safe(body.course, 160) || 'Full stack web development course';
+    const course = safe(body.course, 250) || 'Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)';
 
     // 1. Candidate Name check
     if (!name || name.length < 2) {

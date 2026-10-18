@@ -19,7 +19,7 @@ export default function TrainingCoursePage() {
     id_type: 'AADHAAR', // 'AADHAAR' | 'PAN'
     id_number: '',
     email: '',
-    course: 'Full stack web development course', // by default selected as requested
+    course: 'Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)', // auto-selected single track
   });
 
   const [errors, setErrors] = useState({});
@@ -574,7 +574,7 @@ export default function TrainingCoursePage() {
                 )}
               </div>
 
-              {/* 6. COURSE SELECTION (DEFAULT SELECTED: Full stack web development course) */}
+              {/* 6. COURSE SELECTION (ONLY ONE AUTO-SELECTED OPTION) */}
               <div style={{ marginBottom: '28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
                   <label 
@@ -594,7 +594,7 @@ export default function TrainingCoursePage() {
                       fontWeight: 600
                     }}
                   >
-                    ★ Recommended Track
+                    ✓ Auto-Selected Track
                   </span>
                 </div>
                 <select
@@ -605,33 +605,42 @@ export default function TrainingCoursePage() {
                     width: '100%',
                     padding: '13px 15px',
                     borderRadius: '8px',
-                    border: '1.5px solid #cbd5e1',
+                    border: '1.5px solid #0284c7',
                     outline: 'none',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     color: '#0f172a',
-                    background: '#ffffff',
-                    fontWeight: 600,
-                    cursor: 'pointer',
+                    background: '#f0f9ff',
+                    fontWeight: 700,
+                    cursor: 'default',
                   }}
                 >
-                  <option value="Full stack web development course">
-                    Full stack web development course (Next.js, Node.js, Postgres &amp; Cloud) — [DEFAULT]
-                  </option>
-                  <option value="MERN Stack Specialist">
-                    MERN Stack Specialist (MongoDB, Express, React, Node.js)
-                  </option>
-                  <option value="Python Full Stack & AI Engineering">
-                    Python Full Stack &amp; AI Engineering (FastAPI, Next.js, LLMs, Agents)
-                  </option>
-                  <option value="Backend & Cloud Distributed Systems">
-                    Backend &amp; Cloud Distributed Systems (PostgreSQL, Redis, Docker, CI/CD)
-                  </option>
-                  <option value="Frontend Engineering & UI/UX Systems">
-                    Frontend Engineering &amp; UI/UX Systems (React, TypeScript, Tailwind)
+                  <option value="Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)">
+                    Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)
                   </option>
                 </select>
-                <small style={{ display: 'block', color: '#64748b', fontSize: '11px', marginTop: '6px' }}>
-                  Includes 100% hands-on project implementation, code reviews, and direct mentoring.
+
+                {/* TECH STACK PILLS */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                  {['HTML5', 'CSS3', 'JavaScript', 'React', 'MySQL', 'Node.js', 'GitHub', 'AI Prompting'].map((tech) => (
+                    <span 
+                      key={tech} 
+                      style={{ 
+                        fontSize: '11px', 
+                        fontWeight: 700, 
+                        background: '#ffffff', 
+                        color: '#0f172a', 
+                        border: '1px solid #cbd5e1', 
+                        padding: '3px 8px', 
+                        borderRadius: '6px' 
+                      }}
+                    >
+                      ⚡ {tech}
+                    </span>
+                  ))}
+                </div>
+
+                <small style={{ display: 'block', color: '#64748b', fontSize: '11px', marginTop: '8px' }}>
+                  Includes 100% hands-on training in HTML, CSS, JS, React, MySQL, Node.js, GitHub, and AI Prompt Engineering.
                 </small>
               </div>
 
@@ -703,12 +712,13 @@ export default function TrainingCoursePage() {
               </div>
 
               <ul style={{ margin: '16px 0', paddingLeft: '18px', fontSize: '13px', color: '#475569', lineHeight: 1.8 }}>
-                <li><strong>Next.js 15+ &amp; React 19:</strong> Server Actions, App Router, SSR/SSG.</li>
-                <li><strong>Cloud Databases:</strong> Neon PostgreSQL &amp; Supabase backend integration.</li>
-                <li><strong>Full Authentication:</strong> RBAC, sessions, JWT, and security headers.</li>
-                <li><strong>API Design:</strong> RESTful architecture, microservices, and webhooks.</li>
-                <li><strong>DevOps &amp; Deployments:</strong> Vercel, Docker, Git CI/CD pipelines.</li>
-                <li><strong>Capstone SaaS:</strong> Build &amp; ship 3 production web applications.</li>
+                <li><strong>HTML5 &amp; CSS3:</strong> Modern semantic web, responsive UI, Flexbox, CSS Grid.</li>
+                <li><strong>JavaScript (ES6+):</strong> Async/await, DOM APIs, event loop, functional programming.</li>
+                <li><strong>React.js:</strong> Component architecture, Custom Hooks, state management, SPA.</li>
+                <li><strong>MySQL Database:</strong> Relational schema design, SQL queries, indexing, transactions.</li>
+                <li><strong>Node.js &amp; Express:</strong> RESTful APIs, JWT authentication, backend services.</li>
+                <li><strong>GitHub &amp; Git:</strong> Version control, branch strategies, collaborative PR workflows.</li>
+                <li><strong>AI Prompting &amp; Tools:</strong> AI pair programming, prompt engineering for developers.</li>
               </ul>
 
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#334155' }}>

@@ -34,7 +34,7 @@ create table if not exists public.course_registrations (
   id_type text not null check (id_type in ('AADHAAR', 'PAN')),
   id_number text not null,
   email text not null,
-  course text not null default 'Full stack web development course',
+  course text not null default 'Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)',
   scanned boolean not null default false,
   scanned_at timestamptz,
   scan_lat double precision,

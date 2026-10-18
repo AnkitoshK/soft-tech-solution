@@ -65,10 +65,166 @@ A production fullstack **Next.js (App Router)** website and client lead manageme
 2. **Backend API Route Handlers:**
    - `/api/enquiries`: Handles lead submissions (`POST`), authenticated retrieval (`GET`), status/notes updates (`PATCH`), and lead deletion (`DELETE`). Includes automatic fallback storage for local development.
    - `/api/login`: Secure admin authentication (`POST`, `GET`, `DELETE`) with HMAC-signed session cookies and Bearer tokens.
+   - `/api/courses/next-id`: Computes and returns the next auto-incremented candidate ID (`cand 001`, `cand 002`, etc.).
+   - `/api/courses/register`: Validates candidate details (Aadhaar 12-digit / PAN format, 10-digit mobile, email) and stores enrollment records.
+   - `/api/courses/scan`: Logs QR scan event with GPS coordinates (`latitude`, `longitude`, `accuracy`), timestamp, user-agent, and client IP.
+   - `/api/courses`: Admin-authenticated endpoint (`GET`, `PATCH`, `DELETE`) to query, filter, update payment status, and delete registrations.
+   - `/api/courses/[id]`: Fetches individual candidate profile and scan verification data.
 
 3. **Database Integration:**
-   - Supabase / PostgreSQL schema with Row Level Security (`supabase_schema.sql`).
-   - Seamless fallback in-memory/file mode for rapid local development when database keys are not yet configured.
+   - Supabase / Neon PostgreSQL schema with Row Level Security (`supabase_schema.sql`).
+   - Tables: `enquiries`, `admin_users`, `course_registrations`, and `course_scans`.
+   - Seamless local fallback storage (`.data/` directory) for resilient development when database credentials are unset.
+
+---
+
+## 🎓 Training & Course Platform: Flow & System Architecture
+
+A complete industrial enrollment and payment verification engine designed for **Soft Tech Solution**, featuring automated sequential ID generation, government ID verification, dynamic bank QR generation, and real-time GPS geolocation audit tracking.
+
+### 🏛️ End-to-End Flow & Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph Client ["Client Browser (Mobile & Desktop)"]
+        A["Visitor opens /training (Navbar: Training & Course)"] --> B["Fills Form: Name, 10-digit Mobile, Father Name, Govt ID, Email"]
+        B --> C["Course Locked: Full Stack Web Dev (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting)"]
+        C --> D["Submit Registration Button Clicked"]
+        D --> E["Redirected to /training/payment?id=candidate_id"]
+        E --> F["Displays Bank UPI QR Code + Mobile Deep Link + Account Details"]
+        E --> G["Browser prompts GPS Location (navigator.geolocation)"]
+        G --> H["Captures Latitude, Longitude, Accuracy & Timestamp"]
+    end
+
+    subgraph Server ["Next.js App Router API Handlers"]
+        D -->|"POST /api/courses/register"| I["Register API Handler"]
+        I -->|"Sequential Auto-Increment"| J["Computes Next ID: cand 001, cand 002..."]
+        J -->|"Persist Record"| K[("Database: course_registrations")]
+        
+        H -->|"POST /api/courses/scan"| L["Scan Audit API Handler"]
+        L -->|"Update scanned=true, lat, long, timestamp"| K
+        L -->|"Insert GPS Audit Row"| M[("Database: course_scans")]
+    end
+
+    subgraph AdminPortal ["Admin CRM Portal (/admin)"]
+        N["Admin navigates to '🎓 Training & Course' Tab"]
+        K --> N
+        N --> O["Live KPI Stats: Total, Scanned (GPS), Pending, Enrolled"]
+        N --> P["Search by cand 001, Mobile, Email, Aadhaar/PAN"]
+        N --> Q["1-Click '📍 View on Google Maps' opens exact GPS Coordinates"]
+        N --> R["Update Status: Pending / Scanned / Verified / Completed"]
+        N --> S["Export Candidates CSV & Direct WhatsApp/Call Links"]
+    end
+```
+
+---
+
+### 📋 Candidate Registration Workflow (`/training`)
+
+1. **Auto-Increment Candidate ID (`cand 001`, `cand 002`, etc.):**
+   - The form contacts `/api/courses/next-id` on mount to compute the next sequential candidate ID.
+   - Works across Neon Postgres, Supabase REST API, and local storage fallback.
+2. **Strict Identity & Field Validations:**
+   - **Candidate Full Name:** Required, minimum 2 characters.
+   - **Contact Number:** Strictly validated to Indian 10-digit mobile numbers (`^[6-9]\d{9}$`) with live counter feedback (`10/10 Digits`).
+   - **Father's Name:** Required, minimum 2 characters.
+   - **Government ID Verification (Aadhaar / PAN):**
+     - **Aadhaar Card:** Strictly validated to 12 numeric digits with automatic 4-block spacing (`XXXX XXXX XXXX`) and check against repeating identical digits.
+     - **PAN Card:** Strictly validated to the standard 10-character alphanumeric structure (`[A-Z]{5}[0-9]{4}[A-Z]{1}`).
+   - **Candidate Email ID:** Strict RFC email regex validation with Gmail typo prevention (`@gmai.com` warnings).
+3. **Locked Single Course Selection:**
+   - Pre-selected and locked to the official industrial track:
+     **`Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)`**
+   - Curriculum encompasses:
+     - ⚡ **HTML5 & CSS3:** Semantic markup, responsive layouts, Flexbox, CSS Grid.
+     - ⚡ **JavaScript (ES6+):** Modern asynchronous programming, DOM APIs, event loop.
+     - ⚡ **React.js:** Component patterns, Custom Hooks, state management.
+     - ⚡ **MySQL:** Relational database design, SQL querying, indexing, and joins.
+     - ⚡ **Node.js & Express:** RESTful APIs, JWT authentication, server architectures.
+     - ⚡ **GitHub & Git:** Version control, branching strategies, Pull Request reviews.
+     - ⚡ **AI Prompting & Engineering:** Developer toolchains with Cursor, Gemini, and ChatGPT.
+
+---
+
+### 💳 Bank Account QR Code & GPS Geolocation Audit (`/training/payment`)
+
+1. **Dynamic UPI QR Code Generation:**
+   - On submission, the candidate is automatically redirected to `/training/payment?id=candidate_id`.
+   - Generates a vector UPI QR code linked to the official bank account using the standard URI protocol:
+     ```text
+     upi://pay?pa=softtechsolution@upi&pn=Soft%20Tech%20Solution&tn=Course%20Enrollment%20cand%20001&cu=INR
+     ```
+   - **Bank Transfer Details Card:** Account Holder, Bank Name, Account Number, IFSC Code, and UPI ID with a 1-click **Copy UPI ID** button.
+   - **Mobile Deep Link:** **"📱 Open in UPI App Directly"** launches Google Pay, PhonePe, Paytm, or BHIM on mobile devices.
+2. **Automated Geolocation Audit Tracking:**
+   - Upon viewing/scanning the QR code, the application prompts browser GPS geolocation (`navigator.geolocation.getCurrentPosition`).
+   - Captures:
+     - `latitude` (e.g. `25.594095`)
+     - `longitude` (e.g. `85.137566`)
+     - `accuracy` (in meters)
+     - `scanned_at` timestamp (ISO format)
+     - `ip_address` & `user_agent` (from HTTP headers)
+   - Dispatches payload to `/api/courses/scan` and updates the database record.
+   - Renders a live verification badge on screen:
+     `✅ QR Scan Entry Recorded! Lat: 25.5941, Long: 85.1376` with a direct **"View on Google Maps ↗"** button.
+
+---
+
+### 🛡️ Admin CRM Dashboard (`/admin`)
+
+Within the `/admin` portal, administrators can switch to the **"🎓 Training & Course"** tab:
+
+| Feature | Description |
+| :--- | :--- |
+| **KPI Metrics** | Total Candidates, QR Scanned (with GPS), Pending QR Scan, and Enrolled & Verified counters. |
+| **Search Engine** | Real-time search by Candidate ID (e.g. `cand 001`), Student Name, Mobile, Email, or Govt ID. |
+| **Status Filter** | Filter by `All`, `Scanned Only (with GPS)`, `Not Scanned Yet`, `Pending`, `Verified`, `Completed`, `Cancelled`. |
+| **Candidate ID Chip** | Instant 1-click copy button for `cand 001`. |
+| **Direct Contact** | 1-click 📞 **Call** and 💬 **WhatsApp** direct links with pre-filled student context. |
+| **GPS Verification** | Displays scanned latitude & longitude with a 1-click **"📍 View on Google Maps"** link opening `https://www.google.com/maps?q={lat},{long}`. |
+| **Status Management** | Live dropdown to change status (`Pending` → `Scanned` → `Verified` → `Completed`). |
+| **Candidate Modal** | Deep audit view with registration timestamp, full ID proof, GPS log, and internal **Admin Notes** editor. |
+| **CSV Export** | 1-click **Export Candidates CSV** generates compliant administrative spreadsheets. |
+
+---
+
+### 🗄️ Database Tables Reference (`supabase_schema.sql`)
+
+```sql
+-- 1. Course Registrations Table
+CREATE TABLE IF NOT EXISTS public.course_registrations (
+  id TEXT PRIMARY KEY,
+  candidate_id TEXT UNIQUE NOT NULL,                       -- Auto-incrementing: cand 001, cand 002...
+  name TEXT NOT NULL,                                       -- Candidate full name
+  contact_number TEXT NOT NULL,                             -- Exactly 10 digits
+  father_name TEXT NOT NULL,                                -- Father's name
+  id_type TEXT NOT NULL CHECK (id_type IN ('AADHAAR', 'PAN')),
+  id_number TEXT NOT NULL,                                  -- Aadhaar (12 digits) or PAN (10 chars)
+  email TEXT NOT NULL,                                      -- Email address
+  course TEXT NOT NULL DEFAULT 'Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)',
+  scanned BOOLEAN NOT NULL DEFAULT FALSE,                   -- QR scan status
+  scanned_at TIMESTAMPTZ,                                   -- Timestamp of QR scan
+  scan_lat DOUBLE PRECISION,                                -- GPS Latitude
+  scan_long DOUBLE PRECISION,                               -- GPS Longitude
+  scan_count INTEGER NOT NULL DEFAULT 0,                    -- Total scan count
+  payment_status TEXT NOT NULL DEFAULT 'Pending' 
+    CHECK (payment_status IN ('Pending', 'Scanned', 'Verified', 'Completed', 'Cancelled')),
+  notes TEXT DEFAULT '',                                    -- Internal admin notes
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Course Scans Audit Log Table
+CREATE TABLE IF NOT EXISTS public.course_scans (
+  id TEXT PRIMARY KEY,
+  candidate_id TEXT NOT NULL,
+  scanned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  accuracy DOUBLE PRECISION,
+  user_agent TEXT,
+  ip_address TEXT
+);
+```
 
 ---
 
