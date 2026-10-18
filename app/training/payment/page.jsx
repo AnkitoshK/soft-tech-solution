@@ -17,18 +17,20 @@ function PaymentContent() {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [copiedAcc, setCopiedAcc] = useState(false);
+  const [copiedIfsc, setCopiedIfsc] = useState(false);
 
   // Scan & Geolocation State
   const [scanStatus, setScanStatus] = useState('idle'); // 'idle' | 'locating' | 'recording' | 'scanned' | 'error'
   const [scanDetails, setScanDetails] = useState(null);
   const [scanMessage, setScanMessage] = useState('');
 
-  // Bank & UPI configuration (with fallbacks and env support)
-  const upiId = process.env.NEXT_PUBLIC_UPI_ID || 'softtechsolution@upi';
-  const payeeName = process.env.NEXT_PUBLIC_PAYEE_NAME || 'Soft Tech Solution';
+  // Bank & UPI configuration for Aashutosh Kumar (SBI)
+  const upiId = process.env.NEXT_PUBLIC_UPI_ID || '9142491242@ibl';
+  const payeeName = process.env.NEXT_PUBLIC_PAYEE_NAME || 'Aashutosh Kumar';
   const bankName = process.env.NEXT_PUBLIC_BANK_NAME || 'State Bank of India (SBI)';
-  const accountNumber = process.env.NEXT_PUBLIC_BANK_ACCOUNT || '389201948210';
-  const ifscCode = process.env.NEXT_PUBLIC_BANK_IFSC || 'SBIN0001234';
+  const accountNumber = process.env.NEXT_PUBLIC_BANK_ACCOUNT || '39797312414';
+  const ifscCode = process.env.NEXT_PUBLIC_BANK_IFSC || 'SBIN0003002';
 
   // Construct official UPI payment URI
   const candIdDisplay = candidate?.candidate_id || idParam || 'candidate';
@@ -175,6 +177,12 @@ function PaymentContent() {
       } else if (type === 'id') {
         setCopiedId(true);
         setTimeout(() => setCopiedId(false), 2500);
+      } else if (type === 'acc') {
+        setCopiedAcc(true);
+        setTimeout(() => setCopiedAcc(false), 2500);
+      } else if (type === 'ifsc') {
+        setCopiedIfsc(true);
+        setTimeout(() => setCopiedIfsc(false), 2500);
       }
     }
   };
@@ -380,24 +388,47 @@ function PaymentContent() {
             style={{ 
               background: '#ffffff', 
               borderRadius: '16px', 
-              padding: '32px', 
+              padding: '28px 24px', 
               border: '1px solid #e2e8f0', 
               boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
               textAlign: 'center'
             }}
           >
-            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#e9772d' }}>
-              OFFICIAL PAYMENT GATEWAY
-            </span>
-            <h2 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '20px', fontWeight: 700, color: '#0f172a', margin: '6px 0 16px' }}>
-              Scan to Pay via Any UPI App
-            </h2>
+            {/* OFFICIAL SBI IDENTITY HEADER */}
+            <div style={{ marginBottom: '16px' }}>
+              <div 
+                style={{ 
+                  width: '42px', 
+                  height: '42px', 
+                  borderRadius: '50%', 
+                  background: '#0b57d0', 
+                  color: '#ffffff', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontWeight: 800, 
+                  fontSize: '13px', 
+                  margin: '0 auto 10px',
+                  boxShadow: '0 4px 10px rgba(11,87,208,0.25)',
+                  letterSpacing: '0.05em'
+                }}
+              >
+                SBI
+              </div>
+              <h2 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '20px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>
+                State Bank of India - 2414
+              </h2>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#16a34a', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', display: 'inline-block' }}></span>
+                <span>Primary account for receiving money</span>
+              </div>
+            </div>
 
-            {/* QR CODE DISPLAY */}
+            {/* AUTHENTIC SBI QR CODE DISPLAY */}
             <div 
               style={{ 
-                margin: '0 auto 20px', 
-                padding: '14px', 
+                margin: '0 auto 14px', 
+                padding: '16px', 
                 background: '#ffffff', 
                 borderRadius: '16px', 
                 display: 'inline-block',
@@ -405,36 +436,99 @@ function PaymentContent() {
                 boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)'
               }}
             >
-              {qrDataUrl ? (
-                <img 
-                  src={qrDataUrl} 
-                  alt="Bank UPI QR Code" 
-                  style={{ width: '250px', height: '250px', display: 'block' }}
-                />
-              ) : (
-                <div style={{ width: '250px', height: '250px', display: 'grid', placeItems: 'center', background: '#f8fafc', color: '#94a3b8', fontSize: '13px' }}>
-                  Generating bank QR code...
-                </div>
-              )}
-            </div>
+              <img 
+                src="/ashutosh-sbi-qr.png" 
+                alt="SBI UPI QR Code - Aashutosh Kumar" 
+                onError={(e) => {
+                  if (qrDataUrl) e.currentTarget.src = qrDataUrl;
+                }}
+                style={{ 
+                  width: '260px', 
+                  height: '260px', 
+                  display: 'block', 
+                  margin: '0 auto', 
+                  objectFit: 'contain',
+                  borderRadius: '8px'
+                }}
+              />
 
-            {/* SUPPORTED APPS BADGES */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '22px' }}>
-              {['Google Pay', 'PhonePe', 'Paytm', 'BHIM', 'Cred', 'SBI Yono'].map((app) => (
-                <span 
-                  key={app} 
-                  style={{ 
-                    fontSize: '11px', 
-                    fontWeight: 700, 
-                    color: '#475569', 
-                    background: '#f1f5f9', 
-                    padding: '4px 10px', 
-                    borderRadius: '6px' 
+              {/* UPI ID BANNER */}
+              <div 
+                style={{ 
+                  marginTop: '12px', 
+                  paddingTop: '10px', 
+                  borderTop: '1px solid #f1f5f9',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  fontSize: '14px', 
+                  color: '#475569' 
+                }}
+              >
+                <span>UPI ID:</span>
+                <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '14px' }}>{upiId}</strong>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(upiId, 'upi')}
+                  title="Copy UPI ID"
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '3px 8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#0f172a',
+                    cursor: 'pointer'
                   }}
                 >
-                  {app}
-                </span>
-              ))}
+                  {copiedUpi ? '✓ Copied' : '📋 Copy'}
+                </button>
+              </div>
+            </div>
+
+            {/* DOWNLOAD & SHARE BUTTONS */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '18px' }}>
+              <a
+                href="/ashutosh-sbi-qr.png"
+                download="SBI-Payment-QR-AashutoshKumar.png"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  color: '#0f172a',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>⬇️ Download QR</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(upiId, 'upi')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  color: '#0f172a',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <span>{copiedUpi ? '✓ Copied' : '🔗 Copy UPI'}</span>
+              </button>
             </div>
 
             {/* MOBILE DIRECT APP LAUNCH BUTTON */}
@@ -454,17 +548,46 @@ function PaymentContent() {
                 fontSize: '14px',
                 fontWeight: 800,
                 boxShadow: '0 6px 20px rgba(233,119,45,0.3)',
-                marginBottom: '20px'
+                marginBottom: '18px'
               }}
             >
               <span>📱 Open in UPI App Directly</span>
             </a>
 
-            {/* BANK ACCOUNT & UPI DETAILS TABLE */}
+            {/* SUPPORTED APPS BADGES */}
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                {['PhonePe', 'BHIM', 'Google Pay', 'Paytm', 'SBI YONO', 'Cred'].map((app) => (
+                  <span 
+                    key={app} 
+                    style={{ 
+                      fontSize: '11px', 
+                      fontWeight: 700, 
+                      color: '#475569', 
+                      background: '#f1f5f9', 
+                      padding: '4px 10px', 
+                      borderRadius: '6px' 
+                    }}
+                  >
+                    {app}
+                  </span>
+                ))}
+              </div>
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                Supported on all UPI apps • Powered by UPI
+              </span>
+            </div>
+
+            {/* BANK ACCOUNT & NEFT/IMPS DETAILS TABLE */}
             <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '18px', textAlign: 'left', border: '1px solid #e2e8f0' }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Bank Account Details
-              </h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Bank Account Transfer Details
+                </h4>
+                <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 700 }}>
+                  ✓ SBI Verified
+                </span>
+              </div>
 
               <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
@@ -477,14 +600,48 @@ function PaymentContent() {
                   <strong style={{ color: '#0f172a' }}>{bankName}</strong>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
                   <span style={{ color: '#64748b' }}>Account Number:</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '14px' }}>{accountNumber}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '14px' }}>{accountNumber}</strong>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(accountNumber, 'acc')}
+                      style={{
+                        background: '#fff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {copiedAcc ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
                   <span style={{ color: '#64748b' }}>IFSC Code:</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '14px' }}>{ifscCode}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '14px' }}>{ifscCode}</strong>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(ifscCode, 'ifsc')}
+                      style={{
+                        background: '#fff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {copiedIfsc ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
@@ -493,6 +650,7 @@ function PaymentContent() {
                     <strong style={{ fontFamily: 'monospace', color: '#e9772d', fontSize: '14px' }}>{upiId}</strong>
                   </div>
                   <button
+                    type="button"
                     onClick={() => copyToClipboard(upiId, 'upi')}
                     style={{
                       background: '#fff',
@@ -509,6 +667,10 @@ function PaymentContent() {
                   </button>
                 </div>
               </div>
+            </div>
+
+            <div style={{ marginTop: '14px', background: '#eff6ff', borderRadius: '8px', padding: '10px 12px', fontSize: '12px', color: '#1e40af', textAlign: 'left', lineHeight: 1.5 }}>
+              📌 <strong>Important:</strong> After completing payment via QR or Net Banking, please save your UTR / Transaction Reference number for admission confirmation.
             </div>
 
           </div>

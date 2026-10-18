@@ -148,14 +148,19 @@ flowchart TD
 
 ### 💳 Bank Account QR Code & GPS Geolocation Audit (`/training/payment`)
 
-1. **Dynamic UPI QR Code Generation:**
+1. **Authentic SBI Bank QR Code & Instant UPI Payments:**
    - On submission, the candidate is automatically redirected to `/training/payment?id=candidate_id`.
-   - Generates a vector UPI QR code linked to the official bank account using the standard URI protocol:
+   - Displays the official **State Bank of India (SBI - 2414)** PhonePe QR Code (`/ashutosh-sbi-qr.png`) along with dynamic vector fallback:
      ```text
-     upi://pay?pa=softtechsolution@upi&pn=Soft%20Tech%20Solution&tn=Course%20Enrollment%20cand%20001&cu=INR
+     upi://pay?pa=9142491242@ibl&pn=Aashutosh%20Kumar&tn=Course%20Enrollment%20cand%20001&cu=INR
      ```
-   - **Bank Transfer Details Card:** Account Holder, Bank Name, Account Number, IFSC Code, and UPI ID with a 1-click **Copy UPI ID** button.
-   - **Mobile Deep Link:** **"📱 Open in UPI App Directly"** launches Google Pay, PhonePe, Paytm, or BHIM on mobile devices.
+   - **Verified Bank Transfer Details Card:**
+     - **Account Holder:** `Aashutosh Kumar`
+     - **Bank Name:** `State Bank of India (SBI)`
+     - **Account Number:** `39797312414` (with 1-click Copy)
+     - **IFSC Code:** `SBIN0003002` (with 1-click Copy)
+     - **UPI ID:** `9142491242@ibl` (with 1-click Copy)
+   - **Action Triggers:** 1-click **"📱 Open in UPI App Directly"** launches PhonePe, Google Pay, or Paytm; **"⬇️ Download QR"** saves the official QR code to the device.
 2. **Automated Geolocation Audit Tracking:**
    - Upon viewing/scanning the QR code, the application prompts browser GPS geolocation (`navigator.geolocation.getCurrentPosition`).
    - Captures:
