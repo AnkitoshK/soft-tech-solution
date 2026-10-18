@@ -121,9 +121,9 @@ flowchart TD
 
 ### 📋 Candidate Registration Workflow (`/training`)
 
-1. **Auto-Increment Candidate ID (`cand 001`, `cand 002`, etc.):**
+1. **Auto-Increment Candidate ID & Official Course Syllabus (PDF):**
    - The form contacts `/api/courses/next-id` on mount to compute the next sequential candidate ID.
-   - Works across Neon Postgres, Supabase REST API, and local storage fallback.
+   - **Syllabus in PDF Format:** Positioned right beside the real-time Candidate ID badge is a direct **"📄 Download Syllabus (PDF)"** action (`/syllabus-web-development-course.pdf`) and an interactive **"👁️ View Full Syllabus & Roadmap"** modal covering the full 6-month (24-week) curriculum across 11 modules, 24 Sunday interview prep sessions, and daily 8:00–9:00 PM routine.
 2. **Strict Identity & Field Validations:**
    - **Candidate Full Name:** Required, minimum 2 characters.
    - **Contact Number:** Strictly validated to Indian 10-digit mobile numbers (`^[6-9]\d{9}$`) with live counter feedback (`10/10 Digits`).
@@ -136,13 +136,17 @@ flowchart TD
    - Pre-selected and locked to the official industrial track:
      **`Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)`**
    - Curriculum encompasses:
-     - ⚡ **HTML5 & CSS3:** Semantic markup, responsive layouts, Flexbox, CSS Grid.
-     - ⚡ **JavaScript (ES6+):** Modern asynchronous programming, DOM APIs, event loop.
-     - ⚡ **React.js:** Component patterns, Custom Hooks, state management.
-     - ⚡ **MySQL:** Relational database design, SQL querying, indexing, and joins.
-     - ⚡ **Node.js & Express:** RESTful APIs, JWT authentication, server architectures.
-     - ⚡ **GitHub & Git:** Version control, branching strategies, Pull Request reviews.
-     - ⚡ **AI Prompting & Engineering:** Developer toolchains with Cursor, Gemini, and ChatGPT.
+     - ⚡ **HTML3 & HTML5:** Semantic markup, responsive layouts, forms, accessibility (Weeks 1–2).
+     - ⚡ **CSS3 & Responsive Design:** Flexbox, CSS Grid, mobile-first design (Weeks 3–5).
+     - ⚡ **JavaScript (ES6+):** Asynchronous programming, DOM APIs, event loop, Fetch API (Weeks 6–10).
+     - ⚡ **Git & GitHub:** Version control, branches, PRs, merge conflict resolution (Week 11).
+     - ⚡ **MySQL, Workbench & XAMPP:** Relational schemas, complex queries, joins, indexes (Weeks 12–14).
+     - ⚡ **ChatGPT & Prompting:** AI-assisted development, debugging, code explanation (Week 15).
+     - ⚡ **React.js Frontend:** Components, hooks, state, React Router, Context (Weeks 16–20).
+     - ⚡ **PostgreSQL & Neon:** Serverless relational cloud databases (Week 21).
+     - ⚡ **Vercel Deployment:** Production CI/CD pipelines, environment variables (Week 22).
+     - ⚡ **Capstone Project:** Full stack Employee Management / Job Portal (Week 23).
+     - ⚡ **Revision & Mock Assessments:** 24 weekly Sunday interview prep sessions (Week 24).
 
 ---
 
@@ -172,6 +176,13 @@ flowchart TD
    - Dispatches payload to `/api/courses/scan` and updates the database record.
    - Renders a live verification badge on screen:
      `✅ QR Scan Entry Recorded! Lat: 25.5941, Long: 85.1376` with a direct **"View on Google Maps ↗"** button.
+3. **Payment Successful Pop-Up Modal:**
+   - After scanning the QR and completing payment, students click **"✅ Confirm Payment"** (with optional 12-digit UTR number).
+   - An interactive celebration modal **"🎉 Payment Successful!"** pops up with:
+     - Verified candidate ID, name, course, and SBI transaction details.
+     - Direct **"💬 WhatsApp Admission Slip to Mentors"** link.
+     - **"🖨️ Print / Save Slip"** utility.
+     - Automatically updates `payment_status = 'Completed'` in the database via `PATCH /api/courses/[id]`.
 
 ---
 

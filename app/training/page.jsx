@@ -10,6 +10,7 @@ export default function TrainingCoursePage() {
   // Next candidate ID from server
   const [nextCandId, setNextCandId] = useState('Loading...');
   const [loadingNextId, setLoadingNextId] = useState(true);
+  const [showSyllabusModal, setShowSyllabusModal] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -226,36 +227,99 @@ export default function TrainingCoursePage() {
             Enroll in high-impact industrial software engineering tracks mentored directly by MCA graduates from <strong>Tata Power</strong> &amp; <strong>Railworld</strong>. Learn full stack architecture, write production code, and gain verifiable enterprise experience.
           </p>
 
-          {/* Assigned Candidate ID Notice */}
-          <div 
-            style={{ 
-              marginTop: '28px', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '12px', 
-              background: 'rgba(255, 255, 255, 0.08)', 
-              backdropFilter: 'blur(10px)',
-              padding: '10px 18px', 
-              borderRadius: '10px', 
-              border: '1px solid rgba(255, 255, 255, 0.15)' 
-            }}
-          >
-            <span style={{ fontSize: '13px', color: '#94a3b8' }}>Next Auto-Assigned Candidate ID:</span>
-            <span 
+          {/* Assigned Candidate ID Notice & Course Syllabus PDF Actions */}
+          <div style={{ marginTop: '28px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            {/* Real-time Candidate ID Badge */}
+            <div 
               style={{ 
-                fontFamily: 'monospace', 
-                fontWeight: 800, 
-                fontSize: '15px', 
-                color: '#ff944d', 
-                background: '#0b1329', 
-                padding: '4px 10px', 
-                borderRadius: '6px',
-                border: '1px solid #ff944d55'
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                background: 'rgba(255, 255, 255, 0.08)', 
+                backdropFilter: 'blur(10px)',
+                padding: '10px 18px', 
+                borderRadius: '10px', 
+                border: '1px solid rgba(255, 255, 255, 0.15)' 
               }}
             >
-              {loadingNextId ? 'Calculating...' : nextCandId}
-            </span>
-            <span style={{ fontSize: '11px', color: '#38bdf8' }}>✓ Real-time Sequential ID</span>
+              <span style={{ fontSize: '13px', color: '#94a3b8' }}>Next Auto-Assigned Candidate ID:</span>
+              <span 
+                style={{ 
+                  fontFamily: 'monospace', 
+                  fontWeight: 800, 
+                  fontSize: '15px', 
+                  color: '#ff944d', 
+                  background: '#0b1329', 
+                  padding: '4px 10px', 
+                  borderRadius: '6px',
+                  border: '1px solid #ff944d55'
+                }}
+              >
+                {loadingNextId ? 'Calculating...' : nextCandId}
+              </span>
+              <span style={{ fontSize: '11px', color: '#38bdf8' }}>✓ Real-time Sequential ID</span>
+            </div>
+
+            {/* Syllabus in PDF Format - Directly Beside Candidate ID */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <a
+                href="/syllabus-web-development-course.pdf"
+                download="SoftTechSolution-WebDevelopment-Syllabus.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(135deg, #e9772d 0%, #ea580c 100%)',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 15px rgba(233,119,45,0.35)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  transition: 'transform 0.15s ease'
+                }}
+              >
+                <span style={{ fontSize: '15px' }}>📄</span>
+                <span>Download Syllabus (PDF)</span>
+                <span 
+                  style={{ 
+                    background: 'rgba(0,0,0,0.25)', 
+                    padding: '2px 8px', 
+                    borderRadius: '4px', 
+                    fontSize: '11px', 
+                    fontWeight: 800 
+                  }}
+                >
+                  6 Months / 24 Weeks
+                </span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowSyllabusModal(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(10px)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <span>👁️</span>
+                <span>View Full Syllabus &amp; Roadmap</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -811,6 +875,505 @@ export default function TrainingCoursePage() {
 
         </div>
       </section>
+
+      {/* ============================================================
+          INTERACTIVE FULL COURSE SYLLABUS & ROADMAP MODAL
+          ============================================================ */}
+      {showSyllabusModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'grid',
+            placeItems: 'center',
+            padding: '20px',
+            overflowY: 'auto'
+          }}
+          onClick={() => setShowSyllabusModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              maxWidth: '920px',
+              width: '100%',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden',
+              animation: 'scaleUp 0.25s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* STICKY MODAL HEADER */}
+            <div
+              style={{
+                padding: '20px 28px',
+                background: '#0f172a',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#e9772d', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '2px' }}>
+                  INDUSTRIAL COHORT ROADMAP • 6 MONTHS (24 WEEKS)
+                </span>
+                <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '18px', fontWeight: 700, margin: 0, color: '#fff' }}>
+                  Syllabus: Full Stack Web Development Course
+                </h3>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <a
+                  href="/syllabus-web-development-course.pdf"
+                  download="SoftTechSolution-WebDevelopment-Syllabus.pdf"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#e9772d',
+                    color: '#fff',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textDecoration: 'none'
+                  }}
+                >
+                  <span>📥 Download PDF</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  🖨️ Print
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSyllabusModal(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 0,
+                    color: '#fff',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    display: 'grid',
+                    placeItems: 'center'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* SCROLLABLE MODAL BODY */}
+            <div style={{ padding: '28px', overflowY: 'auto', fontSize: '14px', color: '#334155', lineHeight: 1.6 }}>
+              
+              {/* KEY STATS CARD */}
+              <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '18px 22px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                <div>
+                  <small style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Course Duration</small>
+                  <strong style={{ color: '#0f172a', fontSize: '15px' }}>6 Months (24 Weeks)</strong>
+                </div>
+                <div>
+                  <small style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Class Schedule</small>
+                  <strong style={{ color: '#0f172a', fontSize: '15px' }}>Mon–Fri, 8:00 PM – 9:00 PM</strong>
+                </div>
+                <div>
+                  <small style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Sunday Schedule</small>
+                  <strong style={{ color: '#0f172a', fontSize: '15px' }}>Weekly Interview Prep &amp; Assessment</strong>
+                </div>
+                <div>
+                  <small style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Learning Approach</small>
+                  <strong style={{ color: '#e9772d', fontSize: '14px' }}>Fundamentals → Practice → Projects → Deploy</strong>
+                </div>
+              </div>
+
+              {/* COURSE OBJECTIVE */}
+              <div style={{ background: '#fffbeb', borderRadius: '12px', padding: '18px 20px', border: '1px solid #fef3c7', marginBottom: '26px' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🎯 Course Objective
+                </h4>
+                <p style={{ margin: 0, fontSize: '13px', color: '#78350f', lineHeight: 1.6 }}>
+                  To develop practical skills in frontend web development, database management, version control, AI-assisted coding, website deployment, and interview preparation. By the end of the course, learners should be able to design responsive websites, build interactive React applications, manage databases, use GitHub collaboratively, and deploy a project online.
+                </p>
+              </div>
+
+              {/* 11 CORE MODULES */}
+              <h4 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+                📚 11 Comprehensive Course Modules
+              </h4>
+
+              <div style={{ display: 'grid', gap: '16px', marginBottom: '32px' }}>
+                
+                {/* MODULE 1 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 1: HTML3 Fundamentals &amp; HTML5
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Weeks 1–2
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Introduction to web, browsers, servers; HTML structure, tags, elements, attributes; HTML3 legacy concepts &amp; overview; HTML5 document structure &amp; modern standards; Headings, paragraphs, links, images, lists, tables, forms, inputs, buttons, validation; Semantic elements (header, nav, main, section, article, footer); Audio, video, iframe; Entities, metadata, favicon; Accessibility basics &amp; SEO-friendly structure.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Personal profile webpage, interactive registration form, multi-page HTML portfolio.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Build structured, accessible web pages using modern HTML5.
+                  </div>
+                </div>
+
+                {/* MODULE 2 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 2: CSS — Styling &amp; Responsive Design
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Weeks 3–5
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> CSS syntax, selectors, properties, values (inline, internal, external); Colors, backgrounds, borders, shadows, gradients; Units (px, %, em, rem, vh, vw); Typography, fonts, icons; Box model, margin, padding, borders; Display, position, z-index, overflow, visibility; Flexbox and CSS Grid layout engines; Transitions, transforms, keyframes; Responsive design, media queries, mobile-first layouts; CSS variables, browser DevTools.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Responsive landing page, navbar &amp; card layouts, responsive portfolio website, pixel-perfect sample webpage reproduction.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Design attractive, responsive websites for mobile, tablet, and desktop.
+                  </div>
+                </div>
+
+                {/* MODULE 3 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 3: JavaScript — Programming &amp; DOM
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Weeks 6–10
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> JS setup, console, variables (var, let, const), data types, operators, coercion; Conditionals, loops (for, while, for...of, for...in); Functions, arrow functions, scope, hoisting, closures; Arrays, objects, destructuring, spread/rest; Methods: map, filter, find, reduce, forEach; DOM selection, manipulation, events; Form validation; ES6+ modules, error handling (try/catch); JSON, localStorage, sessionStorage; Callbacks, Promises, async/await, event loop, Fetch API &amp; REST fundamentals.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Calculator app, To-do list with localStorage, form validator, search &amp; filter UI, live Weather app with public API.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Write interactive JavaScript applications and master asynchronous programming.
+                  </div>
+                </div>
+
+                {/* MODULE 4 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 4: Git &amp; GitHub — Version Control
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Week 11
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Git vs GitHub differences; Repository creation, git init, status, add, commit, log; Branching, checkout/switch, merge; Remote repositories, origin, git push, pull, fetch, clone; Pull requests, code review basics; Merge conflicts &amp; resolution; .gitignore, README.md, branching workflows, commit conventions.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Push all assignments to GitHub, create feature branches, resolve simulated merge conflict, maintain clean repository documentation.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Manage project code safely and collaboratively using Git and GitHub.
+                  </div>
+                </div>
+
+                {/* MODULE 5 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 5: MySQL, MySQL Workbench &amp; XAMPP
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Weeks 12–14
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Relational database fundamentals, tables, rows, columns; MySQL installation, Workbench setup, XAMPP, MariaDB, phpMyAdmin; Database/table creation, data types, primary/foreign keys, constraints; CRUD (INSERT, SELECT, UPDATE, DELETE); WHERE, ORDER BY, GROUP BY, HAVING; Aggregates, aliases; Joins (INNER, LEFT, RIGHT, Self); Subqueries, views, indexes, normalization, transactions, ACID, ER diagrams, backups.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Student management database, employee management database, complex CRUD queries &amp; multi-table joins, ER diagram schema design.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Design relational databases and write practical SQL queries using MySQL tools.
+                  </div>
+                </div>
+
+                {/* MODULE 6 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 6: ChatGPT &amp; Effective Prompting
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Week 15
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Understanding AI assistants &amp; limitations; Writing clear, specific prompts; Providing context, requirements, examples; Prompting for HTML, CSS, JS, React, SQL; Code explanation line-by-line; Debugging errors with logs; Test case generation; AI for documentation &amp; code review; Iterative prompting; Verifying correctness, security, avoiding leaking confidential keys.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Convert requirements to coding prompts, debug JS runtime errors, generate SQL queries with validation, plan and document a mini-project.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Use AI productively while understanding and verifying code rather than blindly copying.
+                  </div>
+                </div>
+
+                {/* MODULE 7 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 7: React.js — Frontend Development
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Weeks 16–20
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Component-based architecture; Node.js, npm, dev server; JSX syntax, expressions; Functional components, props, composition; useState, event handling, conditional rendering; Lists &amp; keys; Forms &amp; controlled components; useEffect &amp; lifecycle; Fetch API &amp; integration; Loading, error, empty states; React Router navigation; Context API (useContext); Custom hooks; Performance optimization; React DevTools; Safe rendering.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Reusable component library, product listing &amp; search UI, multi-page React application, REST API integration with forms &amp; routing.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Build maintainable, interactive, component-based frontend applications using React.js.
+                  </div>
+                </div>
+
+                {/* MODULE 8 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 8: PostgreSQL &amp; Neon Database
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Week 21
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> PostgreSQL fundamentals &amp; MySQL differences; PostgreSQL data types; Neon serverless PostgreSQL introduction; Creating projects &amp; databases; Connection strings, pooling concepts; Tables, constraints, relationships; CRUD queries, joins, aggregation; Environment variables, credentials, backups, access management.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Create Neon PostgreSQL database, design tables for capstone project, run CRUD queries, configure production database credentials.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Create and manage a cloud-hosted PostgreSQL database.
+                  </div>
+                </div>
+
+                {/* MODULE 9 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 9: Vercel — Website Hosting &amp; Deployment
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Week 22
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Hosting, domains, DNS, HTTPS; Static hosting vs serverless; Connecting GitHub to Vercel; Deploying React apps, build commands, output dirs; Environment variables, production configuration; Preview deployments vs production; Auto-deploy on git push; Logs, build errors, debugging; Custom domain setup; Serverless function fundamentals.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 6px' }}>
+                    <strong>Practical Tasks:</strong> Deploy React project to Vercel, configure production environment variables, push updates to GitHub with auto-deployment verification, cross-device testing.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Publish a website and understand modern production development workflows.
+                  </div>
+                </div>
+
+                {/* MODULE 10 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 10: Final Project &amp; Portfolio
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Week 23
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Capstone:</strong> Employee Management System / Job Portal — Responsive interface with HTML/CSS/React; Reusable components, forms, validation, search, filter; Database design with PostgreSQL on Neon; Full CRUD access layer; GitHub repository &amp; documentation; Live Vercel deployment, testing, debugging, and final presentation.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Complete and present a practical project demonstrating full stack capabilities.
+                  </div>
+                </div>
+
+                {/* MODULE 11 */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', background: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                      MODULE 11: Revision, Testing &amp; Final Assessment
+                    </h5>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#e9772d', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                      Week 24
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>
+                    <strong>Topics:</strong> Comprehensive revision of HTML, CSS, JavaScript, React; SQL query practice, database design review; GitHub workflow revision; Prompt-writing &amp; AI debugging exercises; Deployment troubleshooting; Project code review; Final practical assessment; Resume and portfolio project discussion.
+                  </p>
+                  <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                    ✓ Outcome: Consolidate knowledge and prepare to explain and demonstrate the project confidently.
+                  </div>
+                </div>
+
+              </div>
+
+              {/* SUNDAY INTERVIEW SCHEDULE */}
+              <div style={{ background: '#0f172a', color: '#fff', borderRadius: '14px', padding: '22px', marginBottom: '26px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#e9772d', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>
+                  WEEKLY PLACEMENT COACHING
+                </span>
+                <h4 style={{ margin: '0 0 14px', fontSize: '16px', fontWeight: 700, color: '#fff' }}>
+                  Weekly Interview Preparation — Every Sunday (24 Weeks)
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
+                  <div>• Sunday 1: HTML fundamentals &amp; common interview questions</div>
+                  <div>• Sunday 2: HTML5, forms, semantics, accessibility</div>
+                  <div>• Sunday 3: CSS selectors, box model, specificity</div>
+                  <div>• Sunday 4: Flexbox, Grid &amp; responsive layouts</div>
+                  <div>• Sunday 5: CSS practical tasks &amp; layout debugging</div>
+                  <div>• Sunday 6: JS variables, data types &amp; operators</div>
+                  <div>• Sunday 7: Conditions, loops &amp; coding challenges</div>
+                  <div>• Sunday 8: Functions, scope, closures &amp; execution</div>
+                  <div>• Sunday 9: Arrays, objects &amp; array methods</div>
+                  <div>• Sunday 10: DOM, events &amp; form validation</div>
+                  <div>• Sunday 11: Promises, async/await &amp; API questions</div>
+                  <div>• Sunday 12: Git commands, branching, push/pull, conflicts</div>
+                  <div>• Sunday 13: SQL fundamentals &amp; CRUD queries</div>
+                  <div>• Sunday 14: Joins, subqueries, indexes &amp; DB design</div>
+                  <div>• Sunday 15: ChatGPT prompting, debugging &amp; code review</div>
+                  <div>• Sunday 16: React components, JSX &amp; props</div>
+                  <div>• Sunday 17: State, events &amp; conditional rendering</div>
+                  <div>• Sunday 18: Hooks &amp; component lifecycle concepts</div>
+                  <div>• Sunday 19: Routing, forms &amp; API integration</div>
+                  <div>• Sunday 20: React coding test &amp; debugging</div>
+                  <div>• Sunday 21: PostgreSQL &amp; Neon database questions</div>
+                  <div>• Sunday 22: Vercel deployment &amp; GitHub integration</div>
+                  <div>• Sunday 23: Final project review &amp; project-based Q&amp;A</div>
+                  <div>• Sunday 24: Mock interview, technical assessment &amp; feedback</div>
+                </div>
+              </div>
+
+              {/* DAILY LEARNING STRATEGY */}
+              <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '18px 20px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+                <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
+                  ⏱️ Daily Learning Strategy (Mon–Fri | 8:00 PM – 9:00 PM)
+                </h4>
+                <div style={{ display: 'grid', gap: '6px', fontSize: '13px', color: '#475569' }}>
+                  <div>• <strong>8:00–8:10 PM:</strong> Revise the previous lesson</div>
+                  <div>• <strong>8:10–8:35 PM:</strong> Learn a new concept with live code demonstration</div>
+                  <div>• <strong>8:35–8:55 PM:</strong> Hands-on coding exercises and mentor assistance</div>
+                  <div>• <strong>8:55–9:00 PM:</strong> Summarize learning and note doubts for review</div>
+                  <div>• <strong>Saturday:</strong> Optional self-practice, assignment completion, and project work</div>
+                  <div>• <strong>Sunday:</strong> Dedicated interview preparation, weekly revision, and assessment</div>
+                </div>
+              </div>
+
+              {/* EXPECTED OUTCOME */}
+              <div style={{ background: '#ecfdf5', borderRadius: '12px', padding: '16px 20px', border: '1px solid #a7f3d0' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#065f46' }}>
+                  🏆 Expected Outcomes
+                </h4>
+                <p style={{ margin: 0, fontSize: '12px', color: '#047857', lineHeight: 1.6 }}>
+                  By completing the syllabus and assignments, learners will possess a rock-solid foundation in modern HTML5/CSS, asynchronous JavaScript, component-based React development, relational MySQL &amp; PostgreSQL database architecture, Git/GitHub collaboration, AI-assisted development, a deployed portfolio web application, and interview readiness verified through 24 mock sessions.
+                </p>
+              </div>
+
+            </div>
+
+            {/* STICKY MODAL FOOTER */}
+            <div
+              style={{
+                padding: '16px 28px',
+                background: '#f8fafc',
+                borderTop: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}
+            >
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                Soft Tech Solution • Verified Industrial Cohort Syllabus
+              </span>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <a
+                  href="/syllabus-web-development-course.pdf"
+                  download="SoftTechSolution-WebDevelopment-Syllabus.pdf"
+                  style={{
+                    background: '#e9772d',
+                    color: '#fff',
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textDecoration: 'none'
+                  }}
+                >
+                  📥 Download PDF File
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowSyllabusModal(false)}
+                  style={{
+                    background: '#0f172a',
+                    color: '#fff',
+                    border: 0,
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </main>
   );
 }

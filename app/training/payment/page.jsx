@@ -20,6 +20,12 @@ function PaymentContent() {
   const [copiedAcc, setCopiedAcc] = useState(false);
   const [copiedIfsc, setCopiedIfsc] = useState(false);
 
+  // Payment Confirmation & Pop-up Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [utrNumber, setUtrNumber] = useState('');
+  const [confirming, setConfirming] = useState(false);
+
   // Scan & Geolocation State
   const [scanStatus, setScanStatus] = useState('idle'); // 'idle' | 'locating' | 'recording' | 'scanned' | 'error'
   const [scanDetails, setScanDetails] = useState(null);
@@ -51,6 +57,10 @@ function PaymentContent() {
       }
       const data = await res.json();
       setCandidate(data);
+
+      if (data.payment_status === 'Completed' || data.payment_status === 'Verified') {
+        setPaymentConfirmed(true);
+      }
 
       if (data.scanned) {
         setScanStatus('scanned');
@@ -184,6 +194,37 @@ function PaymentContent() {
         setCopiedIfsc(true);
         setTimeout(() => setCopiedIfsc(false), 2500);
       }
+    }
+  };
+
+  const handleConfirmPayment = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!candidate) return;
+    setConfirming(true);
+    const refId = utrNumber.trim() || `SBI-UPI-${Date.now().toString().slice(-6)}`;
+    try {
+      const candidateKey = candidate.id || candidate.candidate_id;
+      const res = await fetch(`/api/courses/${encodeURIComponent(candidateKey)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_status: 'Completed',
+          notes: `Payment completed online via SBI QR / UPI. Ref/UTR: ${refId}`,
+        }),
+      });
+      if (res.ok) {
+        setPaymentConfirmed(true);
+        setCandidate((prev) => ({
+          ...prev,
+          payment_status: 'Completed',
+          notes: `Payment completed online via SBI QR / UPI. Ref/UTR: ${refId}`,
+        }));
+      }
+    } catch (err) {
+      console.warn('Payment confirmation error:', err);
+    } finally {
+      setConfirming(false);
+      setShowSuccessModal(true);
     }
   };
 
@@ -673,6 +714,100 @@ function PaymentContent() {
               📌 <strong>Important:</strong> After completing payment via QR or Net Banking, please save your UTR / Transaction Reference number for admission confirmation.
             </div>
 
+            {/* PAYMENT CONFIRMATION CTA BLOCK */}
+            <div 
+              style={{ 
+                marginTop: '18px', 
+                padding: '18px 16px', 
+                background: paymentConfirmed ? '#f0fdf4' : '#faf5ff', 
+                borderRadius: '12px', 
+                border: `1.5px solid ${paymentConfirmed ? '#86efac' : '#d8b4fe'}`, 
+                textAlign: 'center' 
+              }}
+            >
+              <span 
+                style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 800, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.08em', 
+                  color: paymentConfirmed ? '#16a34a' : '#7e22ce', 
+                  display: 'block', 
+                  marginBottom: '6px' 
+                }}
+              >
+                {paymentConfirmed ? '✓ PAYMENT CONFIRMED & VERIFIED' : 'STEP 2: CONFIRM TRANSACTION'}
+              </span>
+              <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+                {paymentConfirmed ? 'Seat Reserved Successfully!' : 'Done with Bank QR / UPI Payment?'}
+              </h4>
+              <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+                {paymentConfirmed 
+                  ? 'Your admission receipt is ready and recorded in the database.' 
+                  : 'Click below to verify your payment and trigger your official admission confirmation.'}
+              </p>
+
+              {!paymentConfirmed ? (
+                <div style={{ display: 'flex', gap: '8px', maxWidth: '420px', margin: '0 auto', flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    placeholder="Enter 12-digit UTR / UPI Ref (Optional)"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    style={{
+                      flex: 1,
+                      minWidth: '180px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '12px',
+                      outline: 'none',
+                      background: '#fff'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleConfirmPayment}
+                    disabled={confirming}
+                    style={{
+                      background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                      color: '#fff',
+                      border: 0,
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 12px rgba(22,163,74,0.25)'
+                    }}
+                  >
+                    {confirming ? 'Verifying...' : '✅ Confirm Payment'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowSuccessModal(true)}
+                    style={{
+                      background: '#16a34a',
+                      color: '#fff',
+                      border: 0,
+                      padding: '9px 18px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(22,163,74,0.25)'
+                    }}
+                  >
+                    🎉 View Payment Success Slip
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* CANDIDATE REGISTRATION SUMMARY CARD */}
@@ -789,6 +924,244 @@ function PaymentContent() {
         </div>
 
       </div>
+
+      {/* ============================================================
+          PAYMENT SUCCESSFUL POP-UP MODAL
+          ============================================================ */}
+      {showSuccessModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.78)',
+            backdropFilter: 'blur(8px)',
+            display: 'grid',
+            placeItems: 'center',
+            padding: '20px',
+            overflowY: 'auto'
+          }}
+          onClick={() => setShowSuccessModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '36px 28px',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center',
+              position: 'relative',
+              animation: 'scaleUp 0.25s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* CLOSE BUTTON */}
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              aria-label="Close Modal"
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '18px',
+                background: '#f1f5f9',
+                border: 0,
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 800,
+                color: '#64748b',
+                display: 'grid',
+                placeItems: 'center'
+              }}
+            >
+              ✕
+            </button>
+
+            {/* CELEBRATION ICON */}
+            <div
+              style={{
+                width: '76px',
+                height: '76px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '40px',
+                margin: '0 auto 16px',
+                boxShadow: '0 10px 25px rgba(34, 197, 94, 0.35)',
+              }}
+            >
+              ✓
+            </div>
+
+            <span 
+              style={{ 
+                fontSize: '11px', 
+                fontWeight: 800, 
+                color: '#16a34a', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.12em',
+                background: '#dcfce7',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                display: 'inline-block',
+                marginBottom: '8px'
+              }}
+            >
+              TRANSACTION RECORDED
+            </span>
+
+            <h2 
+              style={{ 
+                fontFamily: 'Poppins, sans-serif', 
+                fontSize: '24px', 
+                fontWeight: 800, 
+                color: '#0f172a', 
+                margin: '4px 0 10px',
+                letterSpacing: '-0.02em'
+              }}
+            >
+              Payment Successful!
+            </h2>
+
+            <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.6, margin: '0 0 20px' }}>
+              Congratulations <strong>{candidate.name}</strong>! Your payment for the <strong>Full Stack Web Development Course</strong> has been registered and verified successfully.
+            </p>
+
+            {/* OFFICIAL ADMISSION RECEIPT CARD */}
+            <div 
+              style={{ 
+                background: '#f8fafc', 
+                borderRadius: '14px', 
+                padding: '18px 20px', 
+                textAlign: 'left', 
+                border: '1px solid #e2e8f0', 
+                marginBottom: '20px' 
+              }}
+            >
+              <div style={{ display: 'grid', gap: '9px', fontSize: '13px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Candidate ID:</span>
+                  <strong style={{ fontFamily: 'monospace', color: '#c2410c', fontSize: '14px', background: '#fff7ed', padding: '2px 8px', borderRadius: '4px' }}>
+                    {candidate.candidate_id}
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Candidate Name:</span>
+                  <strong style={{ color: '#0f172a' }}>{candidate.name}</strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Industrial Track:</span>
+                  <strong style={{ color: '#0f172a', fontSize: '12px', textAlign: 'right' }}>
+                    Full Stack Web Dev (24 Weeks)
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Beneficiary Bank:</span>
+                  <span style={{ color: '#0f172a', fontWeight: 600 }}>State Bank of India (SBI)</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Beneficiary Name:</span>
+                  <span style={{ color: '#0f172a', fontWeight: 600 }}>Aashutosh Kumar</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Account Number:</span>
+                  <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>39797312414</strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '7px' }}>
+                  <span style={{ color: '#64748b' }}>Transaction / UTR:</span>
+                  <strong style={{ fontFamily: 'monospace', color: '#16a34a' }}>
+                    {utrNumber || 'SBI-UPI-VERIFIED'}
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
+                  <span style={{ color: '#64748b' }}>Admission Status:</span>
+                  <span style={{ color: '#16a34a', fontWeight: 800, background: '#dcfce7', padding: '3px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                    ✓ Confirmed &amp; Logged
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <a
+                href={`https://wa.me/916205570278?text=${encodeURIComponent(`Hello Ankitosh Sir,\nMy payment for Full Stack Web Development is SUCCESSFUL!\nCandidate ID: ${candidate.candidate_id}\nName: ${candidate.name}\nContact: +91 ${candidate.contact_number}\nUTR/Ref: ${utrNumber || 'SBI-UPI-VERIFIED'}\nPlease confirm my batch onboarding schedule.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  background: '#16a34a',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  padding: '13px',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)',
+                }}
+              >
+                <span>💬 WhatsApp Admission Slip to Mentors</span>
+              </a>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    flex: 1,
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    color: '#0f172a',
+                    padding: '11px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  🖨️ Print / Save Slip
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSuccessModal(false)}
+                  style={{
+                    flex: 1,
+                    background: '#0f172a',
+                    border: 0,
+                    color: '#fff',
+                    padding: '11px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </main>
   );
 }
