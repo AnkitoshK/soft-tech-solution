@@ -127,7 +127,7 @@ export default function ContactForm({ isLarge = false }) {
         </div>
       )}
 
-      <div className={isLarge ? 'contact-form-two-inputs' : ''} style={{ display: 'grid', gridTemplateColumns: isLarge ? '1fr 1fr' : '1fr', gap: '15px' }}>
+      <div className={isLarge ? 'contact-form-two-inputs' : 'contact-form-single-input'}>
         <label>
           Your Name *
           <input 

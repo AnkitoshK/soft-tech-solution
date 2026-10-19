@@ -318,7 +318,7 @@ export default function AdminDashboardPage() {
       const nowIso = new Date().toISOString();
 
       const candObj = courses.find(c => c.id === id) || selectedCandidate || {};
-      const candIdClean = (candObj.candidate_id || 'CAND').replace(/\s+/g, '').toUpperCase();
+      const candIdClean = (candObj.candidate_id || 'STS').replace(/\s+/g, '').toUpperCase();
       const receiptNum = candObj.receipt_number || `REC-${new Date().getFullYear()}-${candIdClean}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const updatedReceiptObj = {
@@ -1980,7 +1980,7 @@ export default function AdminDashboardPage() {
                 <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>🔍</span>
                 <input
                   type="text"
-                  placeholder="Search by Candidate ID (cand 001), name, mobile, email, or Aadhaar/PAN..."
+                  placeholder="Search by Candidate ID (STS 001), name, mobile, email, or Aadhaar/PAN..."
                   value={courseSearchQuery}
                   onChange={(e) => setCourseSearchQuery(e.target.value)}
                   style={{
@@ -2843,7 +2843,7 @@ export default function AdminDashboardPage() {
           ? numberToWordsINR(dynamicAmount)
           : (parsedReceipt?.amount_words || 'Zero Rupees Only');
         const dynamicUtr = parsedReceipt?.utr_number || adminReceiptCandidate.utr_number || 'PENDING-UTR';
-        const dynamicReceiptNo = parsedReceipt?.receipt_number || adminReceiptCandidate.receipt_number || `REC-2026-${adminReceiptCandidate.candidate_id?.replace(/\s+/g, '') || 'CAND'}-VERIFIED`;
+        const dynamicReceiptNo = parsedReceipt?.receipt_number || adminReceiptCandidate.receipt_number || `REC-2026-${adminReceiptCandidate.candidate_id?.replace(/\s+/g, '') || 'STS'}-VERIFIED`;
 
         const waMessageText = `Hello Sir,\nHere is the official course fee payment receipt details:\n\n🧾 Receipt No: ${dynamicReceiptNo}\n👤 Candidate ID: ${adminReceiptCandidate.candidate_id}\n👤 Candidate Name: ${adminReceiptCandidate.name}\n👨‍👦 Father's Name: ${adminReceiptCandidate.father_name || 'N/A'}\n📞 Contact: +91 ${adminReceiptCandidate.contact_number}\n✉️ Email: ${adminReceiptCandidate.email}\n🪪 Govt ID: ${adminReceiptCandidate.id_type} - ${adminReceiptCandidate.id_number}\n📚 Course: ${adminReceiptCandidate.course}\n💰 Amount Paid: ₹${Number(dynamicAmount || 0).toLocaleString('en-IN')} (${dynamicAmountWords})\n🏦 Bank UTR: ${dynamicUtr}\n💳 Mode: UPI / SBI Bank Transfer\n📅 Date: ${new Date(adminReceiptCandidate.paid_at || adminReceiptCandidate.created_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}\n✅ Payment Status: ${adminReceiptCandidate.payment_status || 'Verified'}\n\nPlease verify admission record. Thank you!`;
 

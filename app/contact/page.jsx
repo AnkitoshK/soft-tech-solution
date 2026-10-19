@@ -27,16 +27,16 @@ export default function ContactPage() {
 
   return (
     <>
-      <section className="contact-page" style={{ background: 'linear-gradient(120deg, #f5faff, #fff8f2)', padding: '90px 0 70px' }}>
-        <div className="wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: '80px', alignItems: 'flex-start' }}>
+      <section className="contact-page">
+        <div className="wrap contact-page-layout-grid">
           <div>
             <p className="eyebrow">
               <span></span> Start a conversation · IDEAS | CODE | SOLUTIONS
             </p>
-            <h1 style={{ fontSize: 'clamp(38px, 5vw, 56px)', marginBottom: '16px' }}>
+            <h1 style={{ fontSize: 'clamp(30px, 5.5vw, 56px)', marginBottom: '16px' }}>
               Turning Your Ideas Into<br /><em>Digital Success.</em>
             </h1>
-            <p style={{ color: '#6e7889', fontSize: '16px', lineHeight: '1.8', maxWidth: '480px', marginBottom: '32px' }}>
+            <p style={{ color: '#6e7889', fontSize: '15px', lineHeight: '1.75', maxWidth: '480px', marginBottom: '28px' }}>
               Tell us what you are building, scaling, or hoping to fix. Founder Aashutosh Kumar and Co-Founder Ankitosh Kumar review every inquiry personally.
             </p>
 
@@ -76,7 +76,7 @@ export default function ContactPage() {
                 </span>
                 <div>
                   <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Email our leadership</small>
-                  <b style={{ fontSize: '15px', color: '#233453' }}>
+                  <b style={{ fontSize: '15px', color: '#233453', wordBreak: 'break-all' }}>
                     <a href="mailto:softtechsolution@gmail.com" style={{ textDecoration: 'none', color: 'inherit' }}>softtechsolution@gmail.com</a>
                   </b>
                 </div>
@@ -97,7 +97,7 @@ export default function ContactPage() {
             </div>
 
             {/* QUICK WHATSAPP CHIPS */}
-            <div style={{ marginTop: '36px', padding: '24px', background: '#ffffff', borderRadius: '14px', border: '1px solid #e5ebf1', maxWidth: '440px' }}>
+            <div className="contact-fast-track-box">
               <b style={{ display: 'block', fontSize: '14px', color: 'var(--navy)', marginBottom: '8px' }}>⚡ Fast Track WhatsApp Support</b>
               <p style={{ fontSize: '13px', color: '#667085', margin: '0 0 16px', lineHeight: 1.6 }}>
                 Message our founders directly on WhatsApp for an immediate response:

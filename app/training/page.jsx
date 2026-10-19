@@ -40,7 +40,7 @@ export default function TrainingCoursePage() {
         }
       } catch (err) {
         console.warn('Could not load next candidate ID:', err);
-        setNextCandId('cand 001');
+        setNextCandId('STS 001');
       } finally {
         setLoadingNextId(false);
       }
@@ -810,7 +810,7 @@ export default function TrainingCoursePage() {
               <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#fb923c', fontWeight: 700 }}>
                 HAVE QUESTIONS BEFORE JOINING?
               </span>
-              <h3 style={{ margin: '8px 0 10px', fontSize: '18px', fontWeight: 700 }}>
+              <h3 style={{ margin: '8px 0 10px', fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>
                 Speak with the Leadership Team
               </h3>
               <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 18px' }}>

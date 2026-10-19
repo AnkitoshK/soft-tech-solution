@@ -65,7 +65,7 @@ A production fullstack **Next.js (App Router)** website and client lead manageme
 2. **Backend API Route Handlers:**
    - `/api/enquiries`: Handles lead submissions (`POST`), authenticated retrieval (`GET`), status/notes updates (`PATCH`), and lead deletion (`DELETE`). Includes automatic fallback storage for local development.
    - `/api/login`: Secure admin authentication (`POST`, `GET`, `DELETE`) with HMAC-signed session cookies and Bearer tokens.
-   - `/api/courses/next-id`: Computes and returns the next auto-incremented candidate ID (`cand 001`, `cand 002`, etc.).
+   - `/api/courses/next-id`: Computes and returns the next auto-incremented candidate ID (`STS 001`, `STS 002`, etc.).
    - `/api/courses/register`: Validates candidate details (Aadhaar 12-digit / PAN format, 10-digit mobile, email) and stores enrollment records.
    - `/api/courses/scan`: Logs QR scan event with GPS coordinates (`latitude`, `longitude`, `accuracy`), timestamp, user-agent, and client IP.
    - `/api/courses`: Admin-authenticated endpoint (`GET`, `PATCH`, `DELETE`) to query, filter, update payment status, and delete registrations.
@@ -98,7 +98,7 @@ flowchart TD
 
     subgraph Server ["Next.js App Router API Handlers"]
         D -->|"POST /api/courses/register"| I["Register API Handler"]
-        I -->|"Sequential Auto-Increment"| J["Computes Next ID: cand 001, cand 002..."]
+        I -->|"Sequential Auto-Increment"| J["Computes Next ID: STS 001, STS 002..."]
         J -->|"Persist Record"| K[("Database: course_registrations")]
         
         H -->|"POST /api/courses/scan"| L["Scan Audit API Handler"]
@@ -110,7 +110,7 @@ flowchart TD
         N["Admin navigates to '🎓 Training & Course' Tab"]
         K --> N
         N --> O["Live KPI Stats: Total, Scanned (GPS), Pending, Enrolled"]
-        N --> P["Search by cand 001, Mobile, Email, Aadhaar/PAN"]
+        N --> P["Search by STS 001, Mobile, Email, Aadhaar/PAN"]
         N --> Q["1-Click '📍 View on Google Maps' opens exact GPS Coordinates"]
         N --> R["Update Status: Pending / Scanned / Verified / Completed"]
         N --> S["Export Candidates CSV & Direct WhatsApp/Call Links"]
@@ -156,7 +156,7 @@ flowchart TD
    - On submission, the candidate is automatically redirected to `/training/payment?id=candidate_id`.
    - Displays the official **State Bank of India (SBI - 2414)** PhonePe QR Code (`/ashutosh-sbi-qr.png`) along with dynamic vector fallback:
      ```text
-     upi://pay?pa=9142491242@ibl&pn=Aashutosh%20Kumar&tn=Course%20Enrollment%20cand%20001&cu=INR
+     upi://pay?pa=9142491242@ibl&pn=Aashutosh%20Kumar&tn=Course%20Enrollment%20STS%20001&cu=INR
      ```
    - **Verified Bank Transfer Details Card:**
      - **Account Holder:** `Aashutosh Kumar`
@@ -198,8 +198,8 @@ flowchart TD
      Hello Sir,
      Here is the official course fee payment receipt details:
 
-     🧾 Receipt No: REC-2026-CAND005-9154
-     👤 Candidate ID: cand 005
+     🧾 Receipt No: REC-2026-STS005-9154
+     👤 Candidate ID: STS 005
      👤 Candidate Name: Rohit KUMAR
      👨‍👦 Father's Name: mukhesh prasad
      📞 Contact: +91 8271311882
@@ -224,12 +224,12 @@ Within the `/admin` portal, administrators can switch to the **"🎓 Training & 
 | Feature | Description |
 | :--- | :--- |
 | **KPI Metrics** | Total Candidates, QR Scanned (with GPS), Pending QR Scan, Enrolled & Verified, and **💰 Fees Collected (INR)**. |
-| **Search Engine** | Real-time search by Candidate ID (e.g. `cand 001`), Student Name, Mobile, Email, Govt ID, or UTR number. |
+| **Search Engine** | Real-time search by Candidate ID (e.g. `STS 001`), Student Name, Mobile, Email, Govt ID, or UTR number. |
 | **Status Filter** | Filter by `All`, `Scanned Only (with GPS)`, `Not Scanned Yet`, `Pending`, `Verified`, `Completed`, `Cancelled`. |
 | **Dynamic Amount & UTR** | Displays exact amount submitted by candidate (`cand.amount` / `receipt_data.amount`), 12-digit UTR with 1-click copy, and receipt status chip. |
 | **Admin Receipt Viewer** | 1-click **"📄 Receipt"** opens the official Soft Tech Solution Fee Receipt modal showing dynamic amount, words, stamp seal, with 1-click **"🖨️ Print / Save PDF"** and WhatsApp receipt forwarding to `+91 9117696512`. |
 | **Drawer Editor** | Allows admins to edit Amount, 12-digit UTR, Payment Status, and Admin Notes; updates `receipt_data` dynamically. |
-| **Candidate ID Chip** | Instant 1-click copy button for `cand 001`. |
+| **Candidate ID Chip** | Instant 1-click copy button for `STS 001`. |
 | **Direct Contact** | 1-click 📞 **Call** and 💬 **WhatsApp** direct links with pre-filled student context. |
 | **GPS Verification** | Displays scanned latitude & longitude with a 1-click **"📍 View on Google Maps"** link opening `https://www.google.com/maps?q={lat},{long}`. |
 | **Status Management** | Live dropdown to change status (`Pending` → `Scanned` → `Verified` → `Completed`). |
@@ -244,7 +244,7 @@ Within the `/admin` portal, administrators can switch to the **"🎓 Training & 
 -- 1. Course Registrations Table
 CREATE TABLE IF NOT EXISTS public.course_registrations (
   id TEXT PRIMARY KEY,
-  candidate_id TEXT UNIQUE NOT NULL,                       -- Auto-incrementing: cand 001, cand 002...
+  candidate_id TEXT UNIQUE NOT NULL,                       -- Auto-incrementing: STS 001, STS 002...
   name TEXT NOT NULL,                                       -- Candidate full name
   contact_number TEXT NOT NULL,                             -- Exactly 10 digits
   father_name TEXT NOT NULL,                                -- Father's name

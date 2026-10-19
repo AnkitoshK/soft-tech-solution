@@ -362,7 +362,7 @@ function PaymentContent() {
     setConfirming(true);
     setFormError('');
 
-    const candIdClean = (candidate.candidate_id || 'CAND').replace(/\s+/g, '').toUpperCase();
+    const candIdClean = (candidate.candidate_id || 'STS').replace(/\s+/g, '').toUpperCase();
     const receiptNum = candidate.receipt_number || `REC-${new Date().getFullYear()}-${candIdClean}-${Math.floor(1000 + Math.random() * 9000)}`;
     const paidAtIso = new Date().toISOString();
 
@@ -1286,7 +1286,7 @@ function PaymentContent() {
           ? numberToWordsINR(cleanAmountDynamic)
           : (receiptData?.amount_words || 'Zero Rupees Only');
         const dynamicUtr = receiptData?.utr_number || candidate?.utr_number || utrNumber || 'PAID';
-        const dynamicReceiptNo = candidate?.receipt_number || receiptData?.receipt_number || `REC-${new Date().getFullYear()}-${(candidate.candidate_id || 'CAND').replace(/\s+/g, '').toUpperCase()}-VERIFIED`;
+        const dynamicReceiptNo = candidate?.receipt_number || receiptData?.receipt_number || `REC-${new Date().getFullYear()}-${(candidate.candidate_id || 'STS').replace(/\s+/g, '').toUpperCase()}-VERIFIED`;
 
         const studentWaText = `Hello Sir,\nHere is the official course fee payment receipt details:\n\n🧾 Receipt No: ${dynamicReceiptNo}\n👤 Candidate ID: ${candidate.candidate_id}\n👤 Candidate Name: ${candidate.name}\n👨‍👦 Father's Name: ${candidate.father_name || 'N/A'}\n📞 Contact: +91 ${candidate.contact_number}\n✉️ Email: ${candidate.email}\n🪪 Govt ID: ${candidate.id_type} - ${candidate.id_number}\n📚 Course: ${candidate.course}\n💰 Amount Paid: ₹${Number(cleanAmountDynamic).toLocaleString('en-IN')} (${dynamicAmountWords})\n🏦 Bank UTR: ${dynamicUtr}\n💳 Mode: UPI / SBI Bank Transfer\n📅 Date: ${new Date(candidate.paid_at || receiptData?.paid_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}\n✅ Payment Status: Verified\n\nPlease verify admission record. Thank you!`;
 

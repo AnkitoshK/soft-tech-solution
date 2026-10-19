@@ -414,7 +414,7 @@ export default function HomePage() {
               <span>✉</span>
               <div>
                 <small>Send us an email</small>
-                <strong><a href="mailto:softtechsolution@gmail.com" style={{ color: '#ffffff', textDecoration: 'none' }}>softtechsolution@gmail.com</a></strong>
+                <strong><a href="mailto:softtechsolution@gmail.com" style={{ color: '#ffffff', textDecoration: 'none', wordBreak: 'break-all' }}>softtechsolution@gmail.com</a></strong>
               </div>
             </div>
 

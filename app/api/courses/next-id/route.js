@@ -9,6 +9,6 @@ export async function GET() {
     const nextId = await getNextCandidateId();
     return NextResponse.json({ nextId }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ nextId: 'cand 001' }, { status: 200 });
+    return NextResponse.json({ nextId: 'STS 001' }, { status: 200 });
   }
 }
