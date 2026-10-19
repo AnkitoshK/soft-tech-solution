@@ -119,7 +119,7 @@ export default function AboutPage() {
                 “With an MCA degree and corporate software engineering experience at Railworld, I founded Soft Tech Solution in September 2026. Every business deserves authentic, reliable digital growth built on disciplined architecture and measurable customer acquisition.”
               </p>
               
-              <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
+              <div className="founder-action-buttons" style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
                 <a 
                   className="button primary" 
                   href="tel:+919117696512" 
@@ -171,7 +171,7 @@ export default function AboutPage() {
               <p className="founder-bio">
                 “Armed with an MCA degree and enterprise software &amp; systems engineering experience at Tata Power, I lead our technical architecture. We engineer robust, modern Next.js applications and cloud infrastructures built to convert traffic into scalable business revenue.”
               </p>
-              <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
+              <div className="founder-action-buttons" style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
                 <a 
                   className="button primary" 
                   href="tel:+916205570278" 
@@ -204,7 +204,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '22px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '22px' }}>
             <article style={{ background: '#ffffff', border: '1px solid #e5ebf1', padding: '32px', borderRadius: '14px' }}>
               <b style={{ color: 'var(--orange)', fontFamily: 'Poppins, sans-serif', fontSize: '16px' }}>01</b>
               <h3 style={{ fontSize: '20px', margin: '18px 0 10px' }}>Be genuinely useful</h3>
@@ -244,7 +244,7 @@ export default function AboutPage() {
           <p style={{ color: '#cad5e8', fontSize: '16px', lineHeight: 1.8, marginBottom: '30px' }}>
             Connect directly with Founders Aashutosh Kumar (+91 9117696512) and Ankitosh Kumar (+91 6205570278) to start your digital growth sprint today.
           </p>
-          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="services-cta-buttons" style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link className="button primary" href="/contact">
               Start a Conversation <span>→</span>
             </Link>

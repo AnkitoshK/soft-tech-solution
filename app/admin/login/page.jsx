@@ -197,12 +197,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '88vh', display: 'grid', placeItems: 'center', background: '#f5f7fb', padding: '40px 20px' }}>
+    <div style={{ minHeight: '88vh', display: 'grid', placeItems: 'center', background: '#f5f7fb', padding: 'clamp(20px, 4vw, 40px) clamp(12px, 3vw, 20px)' }}>
       <div 
         style={{
           background: '#ffffff',
           width: 'min(480px, 100%)',
-          padding: '36px 36px 40px',
+          padding: 'clamp(24px, 5vw, 36px) clamp(16px, 4vw, 36px)',
           borderRadius: '24px',
           boxShadow: '0 20px 60px rgba(24, 34, 56, 0.1)',
           border: '1px solid #e5ebf4',

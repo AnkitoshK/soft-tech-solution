@@ -834,7 +834,7 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {activeTab === 'leads' && (
               <>
                 <button
@@ -941,23 +941,28 @@ export default function AdminDashboardPage() {
           gap: '8px',
           borderBottom: '1px solid #e2e8f0',
           marginBottom: '24px',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          whiteSpace: 'nowrap',
+          paddingBottom: '2px',
         }}>
           <button
             type="button"
             onClick={() => setActiveTab('leads')}
             style={{
-              padding: '12px 20px',
+              padding: '12px 18px',
               border: 'none',
               background: 'none',
               borderBottom: activeTab === 'leads' ? '3px solid var(--orange)' : '3px solid transparent',
               color: activeTab === 'leads' ? 'var(--navy)' : '#64748b',
               fontWeight: 700,
-              fontSize: '15px',
+              fontSize: '14px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               transition: 'all 0.2s ease',
+              flexShrink: 0,
             }}
           >
             <span>📋</span> Client Proposals &amp; Enquiries
@@ -981,18 +986,19 @@ export default function AdminDashboardPage() {
               loadCourses(courseStatusFilter);
             }}
             style={{
-              padding: '12px 20px',
+              padding: '12px 18px',
               border: 'none',
               background: 'none',
               borderBottom: activeTab === 'courses' ? '3px solid var(--orange)' : '3px solid transparent',
               color: activeTab === 'courses' ? 'var(--navy)' : '#64748b',
               fontWeight: 700,
-              fontSize: '15px',
+              fontSize: '14px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               transition: 'all 0.2s ease',
+              flexShrink: 0,
             }}
           >
             <span>🎓</span> Training &amp; Course
@@ -1016,18 +1022,19 @@ export default function AdminDashboardPage() {
               loadAdmins();
             }}
             style={{
-              padding: '12px 20px',
+              padding: '12px 18px',
               border: 'none',
               background: 'none',
               borderBottom: activeTab === 'admins' ? '3px solid var(--orange)' : '3px solid transparent',
               color: activeTab === 'admins' ? 'var(--navy)' : '#64748b',
               fontWeight: 700,
-              fontSize: '15px',
+              fontSize: '14px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               transition: 'all 0.2s ease',
+              flexShrink: 0,
             }}
           >
             <span>👥</span> Admin IDs &amp; Access Control

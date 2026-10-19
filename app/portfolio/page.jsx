@@ -131,7 +131,7 @@ export default function PortfolioPage() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '26px' }}>
+          <div className="portfolio-page-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '26px' }}>
             {filteredProjects.map((p) => (
               <article 
                 key={p.id}

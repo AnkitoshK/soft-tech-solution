@@ -326,15 +326,15 @@ export default function TrainingCoursePage() {
 
       {/* FORM + BENEFITS GRID */}
       <section className="wrap" style={{ marginTop: '-30px', position: 'relative', zIndex: 10 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: '32px', alignItems: 'start' }}>
+        <div className="training-layout-grid" style={{ display: 'grid', gap: '32px', alignItems: 'start' }}>
           
           {/* MAIN ENROLLMENT FORM CARD */}
           <div 
+            className="training-form-card"
             style={{ 
               background: '#ffffff', 
               borderRadius: '16px', 
               boxShadow: '0 20px 40px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05)', 
-              padding: 'clamp(24px, 4vw, 42px)',
               border: '1px solid #e2e8f0',
             }}
           >
@@ -505,27 +505,30 @@ export default function TrainingCoursePage() {
 
               {/* 4. AADHAAR / PAN NUMBER WITH PROPER CHECK */}
               <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+                <div className="gov-id-header">
+                  <label htmlFor="id_number" style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
                     Government ID Verification <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   
                   {/* ID TYPE SELECTOR TABS */}
-                  <div style={{ display: 'flex', background: '#e2e8f0', borderRadius: '6px', padding: '2px' }}>
+                  <div className="gov-id-tabs">
                     <button
                       type="button"
                       onClick={() => handleChange('id_type', 'AADHAAR')}
                       style={{
+                        flex: 1,
                         border: 0,
                         background: formData.id_type === 'AADHAAR' ? '#ffffff' : 'transparent',
                         color: formData.id_type === 'AADHAAR' ? '#0f172a' : '#64748b',
-                        padding: '5px 12px',
+                        padding: '6px 14px',
                         fontSize: '12px',
                         fontWeight: 700,
                         borderRadius: '4px',
                         cursor: 'pointer',
                         boxShadow: formData.id_type === 'AADHAAR' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                         transition: 'all 0.2s',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
                       }}
                     >
                       Aadhaar Card
@@ -534,16 +537,19 @@ export default function TrainingCoursePage() {
                       type="button"
                       onClick={() => handleChange('id_type', 'PAN')}
                       style={{
+                        flex: 1,
                         border: 0,
                         background: formData.id_type === 'PAN' ? '#ffffff' : 'transparent',
                         color: formData.id_type === 'PAN' ? '#0f172a' : '#64748b',
-                        padding: '5px 12px',
+                        padding: '6px 14px',
                         fontSize: '12px',
                         fontWeight: 700,
                         borderRadius: '4px',
                         cursor: 'pointer',
                         boxShadow: formData.id_type === 'PAN' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                         transition: 'all 0.2s',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
                       }}
                     >
                       PAN Card
@@ -588,13 +594,13 @@ export default function TrainingCoursePage() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                  <small style={{ color: '#64748b', fontSize: '11px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  <small style={{ color: '#64748b', fontSize: '11px', flex: '1 1 180px' }}>
                     {formData.id_type === 'AADHAAR' 
                       ? 'Format: 12 numeric digits with automated spacing check.' 
                       : 'Format: 5 letters + 4 digits + 1 letter (e.g. ABCDE1234F).'}
                   </small>
-                  <span style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600 }}>
+                  <span style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     🔒 Verified &amp; Encrypted
                   </span>
                 </div>
@@ -640,7 +646,7 @@ export default function TrainingCoursePage() {
 
               {/* 6. COURSE SELECTION (ONLY ONE AUTO-SELECTED OPTION) */}
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '7px' }}>
                   <label 
                     htmlFor="course_select"
                     style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}
@@ -655,7 +661,8 @@ export default function TrainingCoursePage() {
                       border: '1px solid #a7f3d0', 
                       padding: '2px 8px', 
                       borderRadius: '12px',
-                      fontWeight: 600
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     ✓ Auto-Selected Track
@@ -810,7 +817,7 @@ export default function TrainingCoursePage() {
                 Our mentors are accessible directly to help guide your career path and syllabus fit.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="training-mentor-buttons">
                 <a 
                   href="tel:+919117696512" 
                   style={{ 
@@ -821,11 +828,12 @@ export default function TrainingCoursePage() {
                     background: 'rgba(255,255,255,0.1)', 
                     color: '#fff', 
                     textDecoration: 'none', 
-                    padding: '10px', 
+                    padding: '12px', 
                     borderRadius: '8px', 
-                    fontSize: '12px', 
+                    fontSize: '13px', 
                     fontWeight: 600,
-                    border: '1px solid rgba(255,255,255,0.15)'
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    minHeight: '44px',
                   }}
                 >
                   📞 Call Aashutosh
@@ -842,10 +850,11 @@ export default function TrainingCoursePage() {
                     background: '#16a34a', 
                     color: '#fff', 
                     textDecoration: 'none', 
-                    padding: '10px', 
+                    padding: '12px', 
                     borderRadius: '8px', 
-                    fontSize: '12px', 
-                    fontWeight: 700 
+                    fontSize: '13px', 
+                    fontWeight: 700,
+                    minHeight: '44px',
                   }}
                 >
                   💬 WhatsApp Tech Lead
@@ -889,7 +898,7 @@ export default function TrainingCoursePage() {
             backdropFilter: 'blur(8px)',
             display: 'grid',
             placeItems: 'center',
-            padding: '20px',
+            padding: 'clamp(10px, 3vw, 20px)',
             overflowY: 'auto'
           }}
           onClick={() => setShowSyllabusModal(false)}
@@ -897,10 +906,10 @@ export default function TrainingCoursePage() {
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '20px',
+              borderRadius: '16px',
               maxWidth: '920px',
               width: '100%',
-              maxHeight: '90vh',
+              maxHeight: '92vh',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 25px 60px rgba(0,0,0,0.4)',

@@ -102,13 +102,13 @@ export default function ContactPage() {
               <p style={{ fontSize: '13px', color: '#667085', margin: '0 0 16px', lineHeight: 1.6 }}>
                 Message our founders directly on WhatsApp for an immediate response:
               </p>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div className="contact-wa-chips" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <a 
                   href="https://wa.me/919117696512?text=Hello%20Aashutosh,%20I%20want%20to%20discuss%20a%20project%20for%20my%20business." 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="button primary"
-                  style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
+                  style={{ flex: 1, padding: '12px 14px', fontSize: '12px' }}
                 >
                   WhatsApp Aashutosh 💬
                 </a>
@@ -117,7 +117,7 @@ export default function ContactPage() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="button secondary"
-                  style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
+                  style={{ flex: 1, padding: '12px 14px', fontSize: '12px' }}
                 >
                   WhatsApp Ankitosh 💬
                 </a>

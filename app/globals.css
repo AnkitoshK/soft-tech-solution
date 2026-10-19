@@ -26,6 +26,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
+  max-width: 100vw;
 }
 
 body {
@@ -35,7 +37,18 @@ body {
   background: #ffffff;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100vw;
+  position: relative;
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+input, select, textarea, button {
+  max-width: 100%;
 }
 
 a {
@@ -46,6 +59,18 @@ a {
 .wrap {
   width: min(1180px, calc(100% - 48px));
   margin: auto;
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    width: calc(100% - 32px);
+  }
+}
+
+@media (max-width: 400px) {
+  .wrap {
+    width: calc(100% - 24px);
+  }
 }
 
 /* TOPBAR */
@@ -1776,7 +1801,7 @@ h1 em, h2 em {
   max-width: 440px;
 }
 
-/* RESPONSIVE DESIGN */
+/* RESPONSIVE DESIGN & MOBILE OPTIMIZATIONS */
 @media (max-width: 960px) {
   .hero-grid {
     grid-template-columns: 1fr;
@@ -1794,8 +1819,9 @@ h1 em, h2 em {
   }
 
   .hero-visual {
-    margin-top: 20px;
+    margin: 20px auto 0;
     height: 420px;
+    max-width: 100%;
   }
 
   .services-grid {
@@ -1824,9 +1850,30 @@ h1 em, h2 em {
     grid-template-columns: 1fr 1fr;
     gap: 30px;
   }
+
+  .training-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .payment-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
 }
 
 @media (max-width: 768px) {
+  .section {
+    padding: 65px 0;
+  }
+
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
   .topbar-inner {
     font-size: 11px;
     height: auto;
@@ -1845,18 +1892,20 @@ h1 em, h2 em {
   }
 
   .brand-logo-img {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
   }
 
-  .brand-main {
-    font-size: 18px;
+  .brand-shared-s {
+    font-size: 32px;
   }
 
-  .brand-sub {
-    font-size: 11px;
-    letter-spacing: 2px;
-    padding-left: 6px;
+  .brand-top-text {
+    font-size: 16px;
+  }
+
+  .brand-bottom-text {
+    font-size: 10px;
   }
 
   .menu-toggle {
@@ -1870,15 +1919,18 @@ h1 em, h2 em {
     right: 0;
     background: #ffffff;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 24px 30px;
-    gap: 18px;
+    align-items: stretch;
+    padding: 20px 24px 28px;
+    gap: 16px;
     border-bottom: 1px solid #e4ebf3;
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
     transform: translateY(-120%);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .nav-links.open {
@@ -1887,9 +1939,15 @@ h1 em, h2 em {
     visibility: visible;
   }
 
+  .nav-links a {
+    font-size: 15px;
+    padding: 8px 0;
+  }
+
   .nav-cta {
     width: 100%;
     text-align: center;
+    margin-top: 6px;
   }
 
   .services-grid, .case-grid {
@@ -1912,4 +1970,223 @@ h1 em, h2 em {
   .footer-grid small {
     text-align: center;
   }
+
+  .contact-form-two-inputs {
+    grid-template-columns: 1fr !important;
+  }
+
+  .training-form-card {
+    padding: 24px 18px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-visual {
+    height: 380px;
+    transform: scale(0.86);
+    transform-origin: top center;
+  }
+
+  .device {
+    left: 50% !important;
+    transform: translateX(-50%) rotate(-4deg) !important;
+  }
+
+  .growth-card {
+    right: 4% !important;
+    top: 24px !important;
+  }
+
+  .metric-card {
+    left: 4% !important;
+    bottom: 24px !important;
+  }
+
+  .about-art {
+    height: 360px;
+    transform: scale(0.85);
+    transform-origin: center top;
+    margin: 0 auto;
+  }
+
+  .founder-card {
+    padding: 24px 18px !important;
+  }
+
+  .founder-avatar-wrap {
+    width: 170px !important;
+    height: 210px !important;
+  }
+
+  .services-cta-buttons {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .services-cta-buttons .button {
+    width: 100% !important;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .gov-id-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .gov-id-tabs {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .gov-id-tabs button {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 8px 10px !important;
+  }
+
+  .training-mentor-buttons {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .training-mentor-buttons a {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  .founder-action-buttons {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .founder-action-buttons .button {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  .contact-wa-chips {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .contact-wa-chips .button {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  .portfolio-page-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-visual {
+    height: 320px;
+    transform: scale(0.74);
+    transform-origin: top center;
+  }
+
+  .about-art {
+    height: 310px;
+    transform: scale(0.72);
+  }
+
+  .training-form-card {
+    padding: 18px 12px !important;
+  }
+
+  .founder-card {
+    padding: 20px 14px !important;
+  }
+
+  .button {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+}
+
+/* TRAINING COHORT RESPONSIVE UTILITIES */
+.training-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.training-form-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05);
+  padding: clamp(20px, 4vw, 42px);
+  border: 1px solid #e2e8f0;
+}
+
+.gov-id-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.gov-id-tabs {
+  display: flex;
+  background: #e2e8f0;
+  border-radius: 6px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.training-mentor-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* PAYMENT PAGE RESPONSIVE UTILITIES */
+.payment-layout-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* FOUNDER ACTION BUTTONS & CARDS */
+.founder-action-buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* CONTACT PAGE & FORM RESPONSIVE UTILITIES */
+.contact-wa-chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.contact-form-two-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+/* SERVICES CTA BUTTONS */
+.services-cta-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* PORTFOLIO GRID */
+.portfolio-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 26px;
 }

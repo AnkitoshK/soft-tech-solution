@@ -648,7 +648,7 @@ function PaymentContent() {
         </div>
 
         {/* TWO COLUMN GRID: QR CODE CARD + CANDIDATE AUDIT INFO */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '28px', alignItems: 'start' }}>
+        <div className="payment-layout-grid" style={{ display: 'grid', gap: '28px', alignItems: 'start' }}>
           
           {/* QR CODE & BANK ACCOUNT CARD */}
           <div 
@@ -712,6 +712,7 @@ function PaymentContent() {
                 style={{ 
                   width: '260px', 
                   height: '260px', 
+                  maxWidth: '100%',
                   display: 'block', 
                   margin: '0 auto', 
                   objectFit: 'contain',
@@ -1256,11 +1257,14 @@ function PaymentContent() {
                   background: '#16a34a',
                   color: '#fff',
                   textDecoration: 'none',
-                  padding: '12px',
+                  padding: '14px',
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: 700,
-                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)'
+                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+                  minHeight: '44px',
+                  textAlign: 'center',
+                  wordBreak: 'break-word',
                 }}
               >
                 <span>💬 WhatsApp Payment Details (to 9117696512)</span>
@@ -1486,41 +1490,43 @@ function PaymentContent() {
               </div>
 
               {/* PAYMENT BREAKDOWN TABLE */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '18px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '1.5px solid #cbd5e1' }}>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>#</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>Description</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>Bank Reference / UTR</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>Amount (INR)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px', verticalAlign: 'top' }}>1</td>
-                    <td style={{ padding: '10px', verticalAlign: 'top' }}>
-                      <strong>Full Stack Web Development Industrial Training Fee</strong>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>
-                        Paid via SBI UPI / QR Code Transfer to Aashutosh Kumar (SBI A/c 39797312414)
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px', verticalAlign: 'top', fontFamily: 'monospace', fontWeight: 700, color: '#16a34a' }}>
-                      {dynamicUtr}
-                    </td>
-                    <td style={{ padding: '10px', verticalAlign: 'top', textAlign: 'right', fontWeight: 800, fontSize: '13px' }}>
-                      ₹{Number(cleanAmountDynamic).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                    <td colSpan={3} style={{ padding: '10px', textAlign: 'right' }}>
-                      Total Amount Received:
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontSize: '15px' }}>
-                      ₹{Number(cleanAmountDynamic).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', marginBottom: '18px' }}>
+                <table style={{ width: '100%', minWidth: '460px', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '1.5px solid #cbd5e1' }}>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>#</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>Description</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700 }}>Bank Reference / UTR</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>Amount (INR)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '10px', verticalAlign: 'top' }}>1</td>
+                      <td style={{ padding: '10px', verticalAlign: 'top' }}>
+                        <strong>Full Stack Web Development Industrial Training Fee</strong>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          Paid via SBI UPI / QR Code Transfer to Aashutosh Kumar (SBI A/c 39797312414)
+                        </div>
+                      </td>
+                      <td style={{ padding: '10px', verticalAlign: 'top', fontFamily: 'monospace', fontWeight: 700, color: '#16a34a' }}>
+                        {dynamicUtr}
+                      </td>
+                      <td style={{ padding: '10px', verticalAlign: 'top', textAlign: 'right', fontWeight: 800, fontSize: '13px' }}>
+                        ₹{Number(cleanAmountDynamic).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                    <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                      <td colSpan={3} style={{ padding: '10px', textAlign: 'right' }}>
+                        Total Amount Received:
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontSize: '15px' }}>
+                        ₹{Number(cleanAmountDynamic).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
               {/* AMOUNT IN WORDS & VERIFIED STAMP ROW */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>

@@ -210,7 +210,7 @@ export default function ServicesPage() {
               Co-Founder Ankitosh Kumar: <a href="tel:+916205570278" style={{ color: '#ffffff', fontWeight: 700 }}>+91 6205570278</a>
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+          <div className="services-cta-buttons" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             <Link className="button primary" href="/contact">
               Get a Proposal <span>→</span>
             </Link>

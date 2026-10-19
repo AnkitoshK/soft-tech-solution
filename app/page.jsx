@@ -234,7 +234,7 @@ export default function HomePage() {
                 “With an MCA degree and software engineering experience at Railworld, I founded Soft Tech Solution in September 2026. Every business deserves authentic, reliable digital growth built on disciplined architecture and measurable customer acquisition.”
               </p>
               
-              <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
+              <div className="founder-action-buttons" style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
                 <a 
                   className="button primary" 
                   href="tel:+919117696512" 
@@ -286,7 +286,7 @@ export default function HomePage() {
               <p className="founder-bio">
                 “Armed with an MCA degree and enterprise software engineering experience at Tata Power, I lead our technical architecture. We engineer robust, modern Next.js applications and cloud infrastructures built to convert traffic into scalable business revenue.”
               </p>
-              <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
+              <div className="founder-action-buttons" style={{ display: 'flex', gap: '10px', width: '100%', marginTop: 'auto' }}>
                 <a 
                   className="button primary" 
                   href="tel:+916205570278" 
