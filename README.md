@@ -20,12 +20,12 @@ A production fullstack **Next.js (App Router)** website and client lead manageme
 
 - **Aashutosh Kumar** — *Founder*, Soft Tech Solution
   - 📞 **Mobile / WhatsApp:** `+91 9117696512`
-  - ✉️ **Email:** `softtechsolution@gmail.com`
+  - ✉️ **Email:** `softtechsolution2026@gmail.com`
   - 🖼️ **Portrait:** [`public/ashutosh-kumar-founder.jpeg`](public/ashutosh-kumar-founder.jpeg) *(in blue coat)*
 
 - **Ankitosh Kumar** — *Co-Founder*, Soft Tech Solution
   - 📞 **Mobile / WhatsApp:** `+91 6205570278`
-  - ✉️ **Email:** `softtechsolution@gmail.com`
+  - ✉️ **Email:** `softtechsolution2026@gmail.com`
   - 🖼️ **Portrait:** [`public/ankitosh-kumar-cofounder.jpeg`](public/ankitosh-kumar-cofounder.jpeg) *(in blue blazer suit)*
 
 ---

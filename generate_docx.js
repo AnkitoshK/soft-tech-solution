@@ -218,7 +218,7 @@ async function generateDocx() {
           heading2('1.1 Executive Leadership'),
           boldPara('Aashutosh Kumar', 'Founder, Soft Tech Solution | Mobile/WhatsApp: +91 9117696512 | Image: Blue Coat Portrait'),
           boldPara('Ankitosh Kumar', 'Co-Founder, Soft Tech Solution | Mobile/WhatsApp: +91 6205570278 | Image: Blue Blazer Suit Portrait'),
-          paragraph('Official Contact Email: softtechsolution@gmail.com | Official Live Website: https://soft-tech-solution-ebon.vercel.app/'),
+          paragraph('Official Contact Email: softtechsolution2026@gmail.com | Official Live Website: https://soft-tech-solution-ebon.vercel.app/'),
 
           heading2('1.2 Official 10 Core Services (From Brand Poster)'),
           bullet('Web Development (</>): Next.js, React, fullstack portals, mobile responsiveness & speed optimization.'),

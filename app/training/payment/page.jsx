@@ -390,7 +390,7 @@ function PaymentContent() {
       company_name: 'Soft Tech Solution',
       company_address: 'Gola Road, Danapur, Patna, Bihar - 801503',
       support_phone: '+91 9142491242',
-      support_email: 'support@softtechsolution.in',
+      support_email: 'softtechsolution2026@gmail.com',
     };
 
     try {
@@ -1566,7 +1566,7 @@ function PaymentContent() {
               <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: '10px', color: '#64748b' }}>
                 <div style={{ maxWidth: '360px', lineHeight: 1.4 }}>
                   <p style={{ margin: '0 0 2px' }}><strong>Note:</strong> This is an officially generated computer fee receipt for training enrollment.</p>
-                  <p style={{ margin: 0 }}>Fees are recorded in Soft Tech Solution central database. For queries contact support@softtechsolution.in.</p>
+                  <p style={{ margin: 0 }}>Fees are recorded in Soft Tech Solution central database. For queries contact softtechsolution2026@gmail.com.</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ borderBottom: '1px solid #94a3b8', width: '130px', margin: '0 auto 4px', height: '24px' }}></div>

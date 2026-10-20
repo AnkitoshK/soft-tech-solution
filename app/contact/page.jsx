@@ -77,7 +77,7 @@ export default function ContactPage() {
                 <div>
                   <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Email our leadership</small>
                   <b style={{ fontSize: '15px', color: '#233453', wordBreak: 'break-all' }}>
-                    <a href="mailto:softtechsolution@gmail.com" style={{ textDecoration: 'none', color: 'inherit' }}>softtechsolution@gmail.com</a>
+                    <a href="mailto:softtechsolution2026@gmail.com" style={{ textDecoration: 'none', color: 'inherit' }}>softtechsolution2026@gmail.com</a>
                   </b>
                 </div>
               </div>

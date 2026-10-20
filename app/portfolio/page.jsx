@@ -157,9 +157,18 @@ export default function PortfolioPage() {
                     position: 'relative',
                   }}
                 >
-                  <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '24px', letterSpacing: '1px' }}>
-                    {p.client}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {p.id === 'workmate' && (
+                      <img 
+                        src="/workmate-tool-icon.svg" 
+                        alt="Workmate Tool Logo" 
+                        style={{ width: '38px', height: '38px', borderRadius: '10px', boxShadow: '0 4px 14px rgba(0,0,0,0.3)', flexShrink: 0 }}
+                      />
+                    )}
+                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '24px', letterSpacing: '1px' }}>
+                      {p.client}
+                    </span>
+                  </div>
                   <div style={{ alignSelf: 'flex-start', background: 'rgba(255, 255, 255, 0.9)', color: '#1f2937', padding: '6px 14px', borderRadius: '20px', fontWeight: 700, fontSize: '12px' }}>
                     {p.metric}
                   </div>

@@ -370,7 +370,14 @@ export default function HomePage() {
 
             <article className="case-case orange-case">
               <p className="case-tag">AI Automation · NLP · Support Ticketing Tool</p>
-              <h3>Workmate AI: Smart ticketing tool cutting turnaround by 72%.</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '8px 0 14px' }}>
+                <img 
+                  src="/workmate-tool-icon.svg" 
+                  alt="Workmate Tool Logo" 
+                  style={{ width: '38px', height: '38px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.25)', flexShrink: 0 }}
+                />
+                <h3 style={{ margin: 0 }}>Workmate AI: Smart ticketing tool cutting turnaround by 72%.</h3>
+              </div>
               <p style={{ color: '#fff', fontSize: '13px', marginBottom: '20px' }}>
                 Architected an intelligent ticketing and customer support desk featuring NLP auto-categorization, priority technician routing, and live SLA analytics.
               </p>
@@ -414,7 +421,7 @@ export default function HomePage() {
               <span>✉</span>
               <div>
                 <small>Send us an email</small>
-                <strong><a href="mailto:softtechsolution@gmail.com" style={{ color: '#ffffff', textDecoration: 'none', wordBreak: 'break-all' }}>softtechsolution@gmail.com</a></strong>
+                <strong><a href="mailto:softtechsolution2026@gmail.com" style={{ color: '#ffffff', textDecoration: 'none', wordBreak: 'break-all' }}>softtechsolution2026@gmail.com</a></strong>
               </div>
             </div>
 

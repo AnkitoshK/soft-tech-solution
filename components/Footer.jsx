@@ -35,7 +35,7 @@ export default function Footer() {
             </p>
             <div className="footer-contact-item">
               <span className="footer-icon">✉</span>
-              <a href="mailto:softtechsolution@gmail.com">softtechsolution@gmail.com</a>
+              <a href="mailto:softtechsolution2026@gmail.com">softtechsolution2026@gmail.com</a>
             </div>
           </div>
 

@@ -345,7 +345,7 @@ export default function AdminDashboardPage() {
         company_name: 'Soft Tech Solution',
         company_address: 'Gola Road, Danapur, Patna, Bihar - 801503',
         support_phone: '+91 9142491242',
-        support_email: 'support@softtechsolution.in',
+        support_email: 'softtechsolution2026@gmail.com',
       };
 
       const res = await fetch(`/api/courses?id=${encodeURIComponent(id)}`, {

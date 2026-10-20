@@ -106,7 +106,7 @@ export default function Testimonials() {
           {[
             { id: 'all', label: 'All Projects (4)' },
             { id: 'softride', label: '🚗 SoftRide (Vehicle Booking)' },
-            { id: 'workmate', label: '🤖 Workmate AI (Ticketing Tool)' },
+            { id: 'workmate', label: 'Workmate AI (Ticketing Tool)', isWorkmate: true },
             { id: 'banners', label: '🎨 UI/UX & Banner Design' },
             { id: 'jobportal', label: '💼 TalentHire (Job Portal)' },
           ].map((tab) => (
@@ -124,8 +124,18 @@ export default function Testimonials() {
                 background: activeFilter === tab.id ? 'linear-gradient(135deg, #e8772e, #f5a42a)' : 'rgba(255, 255, 255, 0.08)',
                 color: '#ffffff',
                 boxShadow: activeFilter === tab.id ? '0 8px 20px rgba(232, 119, 46, 0.35)' : 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
               }}
             >
+              {tab.isWorkmate && (
+                <img
+                  src="/workmate-tool-icon.svg"
+                  alt="Workmate Tool Logo"
+                  style={{ width: '18px', height: '18px', borderRadius: '4px', verticalAlign: 'middle' }}
+                />
+              )}
               {tab.label}
             </button>
           ))}
@@ -166,7 +176,17 @@ export default function Testimonials() {
                     borderRadius: '8px',
                     border: '1px solid rgba(255, 255, 255, 0.18)',
                     letterSpacing: '0.2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
                   }}>
+                    {item.id === 'workmate-ai' && (
+                      <img
+                        src="/workmate-tool-icon.svg"
+                        alt="Workmate Tool Logo"
+                        style={{ width: '18px', height: '18px', borderRadius: '4px', verticalAlign: 'middle' }}
+                      />
+                    )}
                     {item.projectTag}
                   </span>
                   
