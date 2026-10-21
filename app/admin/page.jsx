@@ -343,8 +343,8 @@ export default function AdminDashboardPage() {
         payment_status: statusToSet,
         paid_at: candObj.paid_at || (cleanUtr ? nowIso : null),
         company_name: 'Soft Tech Solution',
-        company_address: 'Gola Road, Danapur, Patna, Bihar - 801503',
-        support_phone: '+91 9142491242',
+        company_address: 'Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309',
+        support_phone: '+91 91176 96512',
         support_email: 'softtechsolution2026@gmail.com',
       };
 
@@ -2851,14 +2851,18 @@ export default function AdminDashboardPage() {
           <div className="receipt-modal-backdrop" style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.8)',
+            background: 'rgba(15, 23, 42, 0.85)',
             backdropFilter: 'blur(8px)',
-            display: 'grid',
-            placeItems: 'center',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             padding: '16px',
             zIndex: 99999,
-            overflowY: 'auto'
-          }}>
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch'
+          }}
+          onClick={() => setAdminReceiptCandidate(null)}
+          >
             {/* PRINT ISOLATION CSS */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
@@ -2885,11 +2889,16 @@ export default function AdminDashboardPage() {
                   border: none !important;
                   max-width: 100% !important;
                   width: 100% !important;
+                  max-height: none !important;
+                  height: auto !important;
                   visibility: visible !important;
                   overflow: visible !important;
                 }
                 #admin-receipt-print-area, #admin-receipt-print-area * {
                   visibility: visible !important;
+                  overflow: visible !important;
+                  max-height: none !important;
+                  height: auto !important;
                 }
                 .admin-receipt-no-print {
                   display: none !important;
@@ -2897,18 +2906,24 @@ export default function AdminDashboardPage() {
               }
             ` }} />
 
-            <div className="receipt-card-wrapper" style={{
-              background: '#ffffff',
-              borderRadius: '20px',
-              maxWidth: '680px',
-              width: '100%',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
-              border: '1px solid #e2e8f0',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
+            <div className="receipt-card-wrapper" 
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#ffffff',
+                borderRadius: '20px',
+                maxWidth: '680px',
+                width: '100%',
+                maxHeight: 'calc(100vh - 32px)',
+                display: 'flex',
+                flexDirection: 'column',
+                margin: 'auto',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                border: '1px solid #e2e8f0',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
               {/* TOP BAR */}
-              <div className="admin-receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="admin-receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '18px' }}>📄</span>
                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>
@@ -2933,7 +2948,7 @@ export default function AdminDashboardPage() {
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      gap: '5px'
                     }}
                   >
                     🖨️ Print / Save PDF
@@ -2961,10 +2976,10 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* PRINTABLE RECEIPT CONTENT */}
-              <div id="admin-receipt-print-area" style={{ padding: '28px 32px', background: '#ffffff', color: '#0f172a' }}>
+              <div id="admin-receipt-print-area" style={{ padding: '28px 32px', background: '#ffffff', color: '#0f172a', overflowY: 'auto', flex: '1 1 auto' }}>
                 
                 {/* HEADER */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '14px', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #e9772d, #f5a42a)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: '16px' }}>
@@ -2977,8 +2992,8 @@ export default function AdminDashboardPage() {
                     <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
                       Industrial Software Training &amp; Technology Solutions
                     </p>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
-                      Gola Road, Danapur, Patna, Bihar - 801503 · Contact: +91 9142491242
+                    <p style={{ margin: 0, fontSize: '11px', color: '#64748b', lineHeight: 1.5 }}>
+                      Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309 · Contact: +91 91176 96512
                     </p>
                   </div>
 
@@ -3050,7 +3065,7 @@ export default function AdminDashboardPage() {
                       <td style={{ padding: '10px', verticalAlign: 'top' }}>1</td>
                       <td style={{ padding: '10px', verticalAlign: 'top' }}>
                         <strong>Full Stack Web Development Industrial Training Tuition Fee</strong>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                           Beneficiary: Aashutosh Kumar (SBI A/c 39797312414, IFSC: SBIN0003002)
                         </div>
                       </td>
@@ -3121,7 +3136,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* MODAL FOOTER */}
-              <div className="admin-receipt-no-print" style={{ background: '#f8fafc', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+              <div className="admin-receipt-no-print" style={{ background: '#f8fafc', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', flexShrink: 0 }}>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <a
                     href={`https://wa.me/919117696512?text=${encodeURIComponent(waMessageText)}`}

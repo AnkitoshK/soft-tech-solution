@@ -388,8 +388,8 @@ function PaymentContent() {
       payment_status: 'Paid & Verified',
       paid_at: paidAtIso,
       company_name: 'Soft Tech Solution',
-      company_address: 'Gola Road, Danapur, Patna, Bihar - 801503',
-      support_phone: '+91 9142491242',
+      company_address: 'Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309',
+      support_phone: '+91 91176 96512',
       support_email: 'softtechsolution2026@gmail.com',
     };
 
@@ -1297,12 +1297,14 @@ function PaymentContent() {
               position: 'fixed',
               inset: 0,
               zIndex: 99999,
-              background: 'rgba(15, 23, 42, 0.8)',
+              background: 'rgba(15, 23, 42, 0.85)',
               backdropFilter: 'blur(8px)',
-              display: 'grid',
-              placeItems: 'center',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               padding: '16px',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch'
             }}
             onClick={() => setShowSuccessModal(false)}
           >
@@ -1332,11 +1334,16 @@ function PaymentContent() {
                   border: none !important;
                   max-width: 100% !important;
                   width: 100% !important;
+                  max-height: none !important;
+                  height: auto !important;
                   visibility: visible !important;
                   overflow: visible !important;
                 }
                 #official-receipt-print-area, #official-receipt-print-area * {
                   visibility: visible !important;
+                  overflow: visible !important;
+                  max-height: none !important;
+                  height: auto !important;
                 }
                 .receipt-no-print {
                   display: none !important;
@@ -1351,6 +1358,10 @@ function PaymentContent() {
                 borderRadius: '20px',
                 maxWidth: '680px',
                 width: '100%',
+                maxHeight: 'calc(100vh - 32px)',
+                display: 'flex',
+                flexDirection: 'column',
+                margin: 'auto',
                 padding: '0',
                 boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
                 border: '1px solid #e2e8f0',
@@ -1361,7 +1372,7 @@ function PaymentContent() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* MODAL ACTION HEADER BAR */}
-              <div className="receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="receipt-no-print" style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '18px' }}>📄</span>
                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>
@@ -1386,39 +1397,39 @@ function PaymentContent() {
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      gap: '5px'
                     }}
                   >
                     🖨️ Print / Save PDF
                   </button>
                   <button
                     type="button"
-                  onClick={() => setShowSuccessModal(false)}
-                  aria-label="Close Modal"
-                  style={{
-                    background: 'rgba(255,255,255,0.15)',
-                    border: 0,
-                    borderRadius: '50%',
-                    width: '28px',
-                    height: '28px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: '#cbd5e1',
-                    display: 'grid',
-                    placeItems: 'center'
-                  }}
-                >
-                  ✕
-                </button>
+                    onClick={() => setShowSuccessModal(false)}
+                    aria-label="Close Modal"
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      border: 0,
+                      borderRadius: '50%',
+                      width: '28px',
+                      height: '28px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      color: '#cbd5e1',
+                      display: 'grid',
+                      placeItems: 'center'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* PRINTABLE RECEIPT CONTENT AREA */}
-            <div id="official-receipt-print-area" style={{ padding: '28px 32px', background: '#ffffff', color: '#0f172a' }}>
+              {/* PRINTABLE RECEIPT CONTENT AREA */}
+              <div id="official-receipt-print-area" style={{ padding: '28px 32px', background: '#ffffff', color: '#0f172a', overflowY: 'auto', flex: '1 1 auto' }}>
               
               {/* RECEIPT HEADER */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '14px', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #e9772d, #f5a42a)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: '16px' }}>
@@ -1431,8 +1442,8 @@ function PaymentContent() {
                   <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
                     Industrial Software Training &amp; Technology Solutions
                   </p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
-                    Gola Road, Danapur, Patna, Bihar - 801503 · Contact: +91 9142491242
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b', lineHeight: 1.5 }}>
+                    Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309 · Contact: +91 91176 96512
                   </p>
                 </div>
 
@@ -1505,7 +1516,7 @@ function PaymentContent() {
                       <td style={{ padding: '10px', verticalAlign: 'top' }}>1</td>
                       <td style={{ padding: '10px', verticalAlign: 'top' }}>
                         <strong>Full Stack Web Development Industrial Training Fee</strong>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                           Paid via SBI UPI / QR Code Transfer to Aashutosh Kumar (SBI A/c 39797312414)
                         </div>
                       </td>
@@ -1578,7 +1589,7 @@ function PaymentContent() {
             </div>
 
             {/* MODAL FOOTER BUTTONS (HIDDEN IN PRINT) */}
-            <div className="receipt-no-print" style={{ background: '#f8fafc', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="receipt-no-print" style={{ background: '#f8fafc', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', flexShrink: 0 }}>
               <a
                 href={`https://wa.me/919117696512?text=${encodeURIComponent(studentWaText)}`}
                 target="_blank"
