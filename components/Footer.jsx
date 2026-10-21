@@ -40,7 +40,7 @@ export default function Footer() {
             <div className="footer-contact-item" style={{ alignItems: 'flex-start', marginTop: '6px' }}>
               <span className="footer-icon">📍</span>
               <span style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
-                Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309
+                Office Location : Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309 · Contact: +91 91176 96512/6205570278
               </span>
             </div>
           </div>

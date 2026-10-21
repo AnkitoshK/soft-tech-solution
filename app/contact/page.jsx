@@ -103,7 +103,7 @@ export default function ContactPage() {
                 <div>
                   <small style={{ display: 'block', fontSize: '11px', color: '#8590a0', fontWeight: 600 }}>Registered Office Location</small>
                   <b style={{ fontSize: '13.5px', color: '#233453', lineHeight: 1.4, display: 'block' }}>
-                    Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309
+                    Office Location : Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309 · Contact: +91 91176 96512/6205570278
                   </b>
                 </div>
               </div>

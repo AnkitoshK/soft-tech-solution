@@ -343,8 +343,8 @@ export default function AdminDashboardPage() {
         payment_status: statusToSet,
         paid_at: candObj.paid_at || (cleanUtr ? nowIso : null),
         company_name: 'Soft Tech Solution',
-        company_address: 'Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309',
-        support_phone: '+91 91176 96512',
+        company_address: 'Office Location : Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309',
+        support_phone: '+91 91176 96512/6205570278',
         support_email: 'softtechsolution2026@gmail.com',
       };
 
@@ -2993,7 +2993,7 @@ export default function AdminDashboardPage() {
                       Industrial Software Training &amp; Technology Solutions
                     </p>
                     <p style={{ margin: 0, fontSize: '11px', color: '#64748b', lineHeight: 1.5 }}>
-                      Post Office: Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309 · Contact: +91 91176 96512
+                      Office Location : Noida Sector 62 S.O, District: Gautam Buddha Nagar, Uttar Pradesh - 201309 · Contact: +91 91176 96512/6205570278
                     </p>
                   </div>
 
