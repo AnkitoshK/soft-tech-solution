@@ -644,7 +644,7 @@ export default function TrainingCoursePage() {
                 )}
               </div>
 
-              {/* 6. COURSE SELECTION (ONLY ONE AUTO-SELECTED OPTION) */}
+              {/* 6. COURSE SELECTION (DROPDOWN OPTIONS) */}
               <div style={{ marginBottom: '28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '7px' }}>
                   <label 
@@ -665,11 +665,12 @@ export default function TrainingCoursePage() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    ✓ Auto-Selected Track
+                    ✓ Select Track
                   </span>
                 </div>
                 <select
                   id="course_select"
+                  name="course"
                   value={formData.course}
                   onChange={(e) => handleChange('course', e.target.value)}
                   style={{
@@ -682,17 +683,29 @@ export default function TrainingCoursePage() {
                     color: '#0f172a',
                     background: '#f0f9ff',
                     fontWeight: 700,
-                    cursor: 'default',
+                    cursor: 'pointer',
                   }}
                 >
                   <option value="Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)">
                     Full Stack Web Development Course (HTML, CSS, JS, React, MySQL, Node.js, GitHub, Prompting etc.)
                   </option>
+                  <option value="Digital Marketing Course">
+                    Digital Marketing Course
+                  </option>
+                  <option value="UI/UX Designing Course">
+                    UI/UX Designing Course
+                  </option>
                 </select>
 
                 {/* TECH STACK PILLS */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
-                  {['HTML5', 'CSS3', 'JavaScript', 'React', 'MySQL', 'Node.js', 'GitHub', 'AI Prompting'].map((tech) => (
+                  {(
+                    formData.course.includes('Digital Marketing')
+                      ? ['SEO & SEM', 'Google Ads', 'Meta Ads', 'Social Media', 'Content Strategy', 'Email Marketing', 'Analytics', 'Brand Growth']
+                      : formData.course.includes('UI/UX')
+                      ? ['Figma', 'Wireframing', 'Prototyping', 'Design Systems', 'User Research', 'Usability Testing', 'UI Visuals', 'Interaction Design']
+                      : ['HTML5', 'CSS3', 'JavaScript', 'React', 'MySQL', 'Node.js', 'GitHub', 'AI Prompting']
+                  ).map((tech) => (
                     <span 
                       key={tech} 
                       style={{ 
@@ -711,7 +724,11 @@ export default function TrainingCoursePage() {
                 </div>
 
                 <small style={{ display: 'block', color: '#64748b', fontSize: '11px', marginTop: '8px' }}>
-                  Includes 100% hands-on training in HTML, CSS, JS, React, MySQL, Node.js, GitHub, and AI Prompt Engineering.
+                  {formData.course.includes('Digital Marketing')
+                    ? 'Includes comprehensive hands-on training in SEO, paid Google & Meta ads, content strategy, email marketing, and analytics.'
+                    : formData.course.includes('UI/UX')
+                    ? 'Includes 100% practical training in Figma, UX research, wireframing, component design systems, and prototype testing.'
+                    : 'Includes 100% hands-on training in HTML, CSS, JS, React, MySQL, Node.js, GitHub, and AI Prompt Engineering.'}
                 </small>
               </div>
 
